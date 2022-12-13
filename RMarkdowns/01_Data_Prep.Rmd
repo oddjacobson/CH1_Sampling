@@ -1,0 +1,129 @@
+---
+title: "Data_Prep"
+author: "Odd Jacobson"
+date: "2022-12-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document contains the code that formats the tracking data so that it is compatible with ctmm for home range estimation. 
+
+The initial dataset read into this script is the total cleaned tracking data. Sampling rates vary between 5 minutes and 30 seconds per fix. I average the locations every 30 minutes to speed up computation, which has no effect at the home range scale. 
+Load Packages:
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ctmm)
+library(sf)
+library(ctmmweb)
+library(lubridate)
+library(sp)
+```
+
+
+## Format Data
+
+```{r, eval=FALSE}
+
+# read in cleaned tracking data
+t <- read_rds("Data/trk.rds")
+
+#prepare data -- signify seasons and thin sampling rate
+d <- t %>%
+  mutate(month = str_sub(date, 6,7),
+         season = ifelse(as.numeric(month) %in% 1:5,
+                         "dry",
+                         "wet"),
+         time = as_datetime(time, tz = "America/Costa_Rica")) %>%
+  bind_cols(., st_coordinates(.) %>% as_tibble()) %>% #separating geometry into two columns x and y
+  as_tibble() %>%
+  dplyr::select(-geometry) %>%
+  mutate(Z=X + 1i*Y, #creating complex number (real and imaginary) so we can get an average of points
+         minute_bin=floor_date(time,"30 mins")) %>%  #taking point in 30min window and rounding down to clean 30min breaks
+  group_by(group,minute_bin, season, year) %>%
+  summarize(Z=mean(Z)) %>%
+  ungroup() %>%
+  mutate(X=Re(Z),
+         Y=Im(Z)) %>%  #extracting our x and y from complex number (Re=real, Im=imaginary)
+  st_as_sf(coords=c("X", "Y"), crs=8909) %>% #convert back to spatial object
+  dplyr::select(-Z)
+
+#format for telemetry object
+d_formatted <- d %>%
+  st_transform(crs = "+proj=longlat +datum=WGS84 +no_defs") %>%
+  bind_cols(.,st_coordinates(.) %>% as_tibble()) %>%
+  as_tibble() %>%
+  mutate(individual.local.identifier = str_c(group,season,sep = "_")) %>%
+  dplyr::select(-geometry) %>%
+  dplyr::select(individual.local.identifier,
+                timestamp = minute_bin,
+                location.long = X,
+                location.lat = Y,
+                season,
+                year) %>%
+  arrange(individual.local.identifier, timestamp)
+
+saveRDS(d_formatted, "Data/30min_trkpts_formatted")
+
+```
+
+## Temporal Plot
+
+Plot showing how much tracking data was collected from 2009-2020 per group. 13 hours signifying a full day of data collection.
+
+```{r, message=FALSE}
+
+# read in data saved from above formatting
+data <- readRDS("../Data/30min_trkpts_formatted") %>%  # read in full dataset at 30min sampling rate
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         id = str_c(group,"_",year,"_",season))
+
+# function to make plots look nicer
+theme_clean <- function() {
+  theme_minimal(base_family = "Barlow Semi Condensed") +
+    theme(panel.grid.minor = element_blank(),
+          plot.title = element_text(family = "BarlowSemiCondensed-Bold"),
+          axis.title = element_text(family = "BarlowSemiCondensed-Medium"),
+          strip.text = element_text(family = "BarlowSemiCondensed-Bold",
+                                    size = rel(1), hjust = 0),
+          strip.background = element_rect(fill = "grey80", color = NA))
+}
+
+# get colors
+safe_colorblind_palette <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
+
+# summarize number of observations per date per group
+d_sum <- data %>% 
+  mutate(date = date(timestamp)) %>% 
+  group_by(date, group) %>% 
+  summarise(n = length(timestamp))
+```
+
+Plot
+```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+d_sum %>% 
+  ggplot(aes(x = date, y = n/26, color = group)) +
+  geom_hline(aes(yintercept = 0), color = "black") +
+  geom_hline(aes(yintercept = 1), color = "gray70", lty = 3) +
+  geom_segment(aes(xend = date, yend = 0), alpha = 0.5) + 
+  theme_bw() +
+  theme(panel.border = element_blank(),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        axis.text.y = element_text(size = 7),
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5)) +
+  scale_color_manual(values = safe_colorblind_palette) +
+  scale_y_continuous(limits = c(0,1), breaks = 1,  labels = "13h") +
+  scale_x_date(breaks = scales::date_breaks("1 years"), labels = scales::date_format("%Y")) + 
+  #guides(colour = guide_legend(override.aes = list(size=10))) +
+  labs(x = "Date", y = "") +
+  ggtitle("Observation Periods") +
+  facet_grid(group ~ ., drop = TRUE)  
+```
+
