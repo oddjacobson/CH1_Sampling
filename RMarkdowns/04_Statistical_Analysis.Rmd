@@ -56,7 +56,7 @@ theme_clean <- function() {
 ### Get data frame 
 
 ```{r}
-df <- readRDS("../Intermediate/DF_Performance_redo2.rds") %>% 
+df <- readRDS("../Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random,
          weeks = num_uniweeks,
@@ -215,7 +215,7 @@ mcmc_plot(m_locs, type = 'areas')
 
 Posterior predictions
 
-```{r}
+```{r, message=FALSE}
 
 # add posterior predictions
 post_loc_draws <- df %>% 
@@ -249,12 +249,12 @@ ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop, color = typ
   geom_line(data = mean_only, stat = "smooth", # add mean line
             aes(group = type), lwd = 1.1) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
-  geom_segment(aes(x = 1.15, xend = 1.15, y = -Inf, yend = 0.95),
+  annotate("segment", x = 1.15, xend = 1.15, y = -Inf, yend = 0.95,
                linetype = "dashed",
                color = "#370499",
                size = 1,
                alpha = 0.5) +
-  geom_segment(aes(x = 0.9, xend = 0.9, y = -Inf, yend = 0.95),
+  annotate("segment", x = 0.9, xend = 0.9, y = -Inf, yend = 0.95,
                linetype = "dashed",
                color = "#feb82c",
                size = 1,
@@ -366,12 +366,12 @@ ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, color = type,
   geom_line(data = mean_only, stat = "smooth", # add mean line
             aes(group = type), lwd = 1.1) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
-  geom_segment(aes(x = 1.4, xend = 1.4, y = -Inf, yend = 0.95),
+  annotate("segment", x = 1.4, xend = 1.4, y = -Inf, yend = 0.95,
                linetype = "dashed",
                color = "#feb82c",
                size = 1,
                alpha = 0.5) +
-  geom_segment(aes(x = 0.35, xend = 0.35, y = -Inf, yend = 0.95),
+  annotate("segment", x = 0.35, xend = 0.35, y = -Inf, yend = 0.95,
                linetype = "dashed",
                color = "#370499",
                size = 1,
