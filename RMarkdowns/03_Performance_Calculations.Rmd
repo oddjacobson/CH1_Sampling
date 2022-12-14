@@ -27,24 +27,24 @@ library(sp)
 
 ```{r, eval=FALSE}
 # read in data, fits, and akdes
-AA <- readRDS("Intermediate/DATA_aa_redo2.rds")
-CE <- readRDS("Intermediate/DATA_ce_redo2.rds")
-RR <- readRDS("Intermediate/DATA_rr_redo2.rds")
-AA2 <- readRDS("Intermediate/DATA_aa2_redo2.rds")
-SP <- readRDS("Intermediate/DATA_sp_redo2.rds")
-FL <- readRDS("Intermediate/DATA_fl_redo2.rds")
-FITSa <-readRDS("Intermediate/FITS_aa_redo2.rds")
-FITSc <- readRDS("Intermediate/FITS_ce_redo2.rds")
-FITSr <- readRDS("Intermediate/FITS_rr_redo2.rds")
-FITSa2 <- readRDS("Intermediate/FITS_aa2_redo2.rds")
-FITSs <- readRDS("Intermediate/FITS_sp_redo2.rds")
-FITSf <- readRDS("Intermediate/FITS_fl_redo2.rds")
-AKDEa <- readRDS("Intermediate/AKDE_aa_redo2.rds")
-AKDEc <- readRDS("Intermediate/AKDE_ce_redo2.rds")
-AKDEr <- readRDS("Intermediate/AKDE_rr_redo2.rds")
-AKDEa2 <- readRDS("Intermediate/AKDE_aa2_redo2.rds")
-AKDEs <- readRDS("Intermediate/AKDE_sp_redo2.rds")
-AKDEf <- readRDS("Intermediate/AKDE_fl_redo2.rds")
+AA <- readRDS("Intermediate/DATA_aa.rds")
+CE <- readRDS("Intermediate/DATA_ce.rds")
+RR <- readRDS("Intermediate/DATA_rr.rds")
+AA2 <- readRDS("Intermediate/DATA_aa2.rds")
+SP <- readRDS("Intermediate/DATA_sp.rds")
+FL <- readRDS("Intermediate/DATA_fl.rds")
+FITSa <-readRDS("Intermediate/FITS_aa.rds")
+FITSc <- readRDS("Intermediate/FITS_ce.rds")
+FITSr <- readRDS("Intermediate/FITS_rr.rds")
+FITSa2 <- readRDS("Intermediate/FITS_aa2.rds")
+FITSs <- readRDS("Intermediate/FITS_sp.rds")
+FITSf <- readRDS("Intermediate/FITS_fl.rds")
+AKDEa <- readRDS("Intermediate/AKDE_aa.rds")
+AKDEc <- readRDS("Intermediate/AKDE_ce.rds")
+AKDEr <- readRDS("Intermediate/AKDE_rr.rds")
+AKDEa2 <- readRDS("Intermediate/AKDE_aa2.rds")
+AKDEs <- readRDS("Intermediate/AKDE_sp.rds")
+AKDEf <- readRDS("Intermediate/AKDE_fl.rds")
 
 ```
 
@@ -423,7 +423,444 @@ true_df <- DF %>%
 
 
 # save dataframe
-saveRDS(emulated_df, "Intermediate/DF_Performance_redo2.rds")
-saveRDS(true_df, "Intermediate/DF_True_HRs_redo2.rds")
+saveRDS(emulated_df, "Intermediate/DF_Performance.rds")
+saveRDS(true_df, "Intermediate/DF_True_HRs.rds")
 ```
 
+## Plot Home Range Performance Maps
+
+The plots show the 95% UD estimates with 95% CIs using the data from the different sampling regimes. 
+Each plot shows the total locations from the high-quality sample, but the yellow points are the ones that were selected in the regime, and the red points are the one's that were thinned out.
+
+### AA Group
+
+Get boundaries and points and change to sf object
+```{r}
+# change to sf objects
+aa_data_sf <- readRDS("../Intermediate/DATA_aa.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa_akde_sf <- readRDS("../Intermediate/AKDE_aa.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa_akde_CI <- readRDS("../Intermediate/AKDE_aa.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+aa_all_data <- readRDS("../Intermediate/DATA_aa.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height= 6, fig.width=10}
+# get colors
+colors <- c("missing points" = "#D55E00", "used points" = "#F0E442") 
+
+ggplot() +
+  geom_sf(data = aa_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa_akde_sf, fill =NA , inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)", title = "AA") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1),
+        strip.text.x = element_text( margin = margin(t = 1, r = 2, b = 1, l = 2) ),
+        panel.spacing.x = unit(2, "lines")) +
+  facet_wrap(~id, nrow = 2) 
+```
+
+### CE Group
+
+Get boundaries, points, and change to sf object
+
+```{r}
+# change to sf objects
+ce_data_sf <- readRDS("../Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_akde_sf <- readRDS("../Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_akde_CI <- readRDS("../Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+ce_all_data <- readRDS("../Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height=6, fig.width=10}
+
+ggplot() +
+  geom_sf(data = ce_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_akde_sf, fill =NA , inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.700,677.500), ylim=c(1162.000, 1164.100)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)", title = "CE") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1),
+        strip.text.x = element_text( margin = margin(t = 1, r = 2, b = 1, l = 2) ),
+        panel.spacing.x = unit(2, "lines")) +
+  facet_wrap(~id, nrow = 2) 
+
+```
+
+### RR Group
+
+Get boundaries, points, and change to sf object
+
+```{r}
+# change to sf objects
+rr_data_sf <- readRDS("../Intermediate/DATA_rr.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+rr_akde_sf <- readRDS("../Intermediate/AKDE_rr.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+rr_akde_CI <- readRDS("../Intermediate/AKDE_rr.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+rr_all_data <- readRDS("../Intermediate/DATA_rr.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height=6, fig.width=10}
+
+ggplot() +
+  geom_sf(data = rr_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = rr_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = rr_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = rr_akde_sf, fill =NA , inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(677.000,680.000), ylim=c(1160.000, 1163.500)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)", title = "RR") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1),
+        strip.text.x = element_text( margin = margin(t = 1, r = 2, b = 1, l = 2) ),
+        panel.spacing.x = unit(2, "lines")) +
+  facet_wrap(~id, nrow = 2) 
+
+```
+
+### AA2 Group
+
+Get boundaries, points, and change to sf object
+
+```{r}
+# change to sf objects
+aa2_data_sf <- readRDS("../Intermediate/DATA_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa2_akde_sf <- readRDS("../Intermediate/AKDE_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa2_akde_CI <- readRDS("../Intermediate/AKDE_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+aa2_all_data <- readRDS("../Intermediate/DATA_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height= 6, fig.width=10}
+
+ggplot() +
+  geom_sf(data = aa2_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa2_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa2_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa2_akde_sf, fill =NA , inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)", title = "AA2") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1),
+        strip.text.x = element_text( margin = margin(t = 1, r = 2, b = 1, l = 2) ),
+        panel.spacing.x = unit(2, "lines")) +
+  facet_wrap(~id, nrow = 2) 
+```
+
+### FL Group
+
+Get boundaries, points, and change to sf object
+
+```{r}
+# change to sf objects
+fl_data_sf <- readRDS("../Intermediate/DATA_fl.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+fl_akde_sf <- readRDS("../Intermediate/AKDE_fl.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+fl_akde_CI <- readRDS("../Intermediate/AKDE_fl.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+fl_all_data <- readRDS("../Intermediate/DATA_fl.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height= 6, fig.width=10}
+
+ggplot() +
+  geom_sf(data = fl_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = fl_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = fl_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = fl_akde_sf, fill =NA , inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.500,680.000), ylim=c(1163.000, 1167.000)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)", title = "FL") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1),
+        strip.text.x = element_text( margin = margin(t = 1, r = 2, b = 1, l = 2) ),
+        panel.spacing.x = unit(2, "lines")) +
+  facet_wrap(~id, nrow = 2) 
+```
+
+### SP Group
+
+Get boundaries, points, and change to sf object
+
+```{r}
+# change to sf objects
+sp_data_sf <- readRDS("../Intermediate/DATA_sp.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+sp_akde_sf <- readRDS("../Intermediate/AKDE_sp.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+sp_akde_CI <- readRDS("../Intermediate/AKDE_sp.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+sp_all_data <- readRDS("../Intermediate/DATA_sp.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r, warning=FALSE, fig.height= 6, fig.width=10}
+
+ggplot() +
+  geom_sf(data = sp_all_data, aes(color = "missing points"), size = 1.5, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = sp_data_sf, aes(color = "used points"), size = 1.5, alpha = 0.8, inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = sp_akde_CI, fill = NA, linetype = "dashed", inherit.aes = FALSE, alpha = 0.3, size = 0.3) +
+  geom_sf(data = sp_akde_sf, fill = NA, inherit.aes = FALSE, alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", width_hint = 0.3,height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.250,679.000), ylim=c(1159.500, 1162.500)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  labs( x = "Easting (km)", y = "Northing (km)", title = "SP") +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle=45, hjust = 1)) +
+  facet_wrap(~id, nrow = 2)
+```

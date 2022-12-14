@@ -900,36 +900,36 @@ Save everything
 ```{r, eval=FALSE}
 
 # save DATA, AKDEs and FITs
-saveRDS(FITSa, "Intermediate/FITS_aa_redo2.rds")
-saveRDS(FITSc, "Intermediate/FITS_ce_redo2.rds")
-saveRDS(FITSr, "Intermediate/FITS_rr_redo2.rds")
-saveRDS(FITSa2, "Intermediate/FITS_aa2_redo2.rds")
-saveRDS(FITSs, "Intermediate/FITS_sp_redo2.rds")
-saveRDS(FITSf, "Intermediate/FITS_fl_redo2.rds")
-saveRDS(AKDEa, "Intermediate/AKDE_aa_redo2.rds")
-saveRDS(AKDEc, "Intermediate/AKDE_ce_redo2.rds")
-saveRDS(AKDEr, "Intermediate/AKDE_rr_redo2.rds")
-saveRDS(AKDEa2, "Intermediate/AKDE_aa2_redo2.rds")
-saveRDS(AKDEs, "Intermediate/AKDE_sp_redo2.rds")
-saveRDS(AKDEf, "Intermediate/AKDE_fl_redo2.rds")
-saveRDS(AA, "Intermediate/DATA_aa_redo2.rds")
-saveRDS(CE, "Intermediate/DATA_ce_redo2.rds")
-saveRDS(RR, "Intermediate/DATA_rr_redo2.rds")
-saveRDS(AA2, "Intermediate/DATA_aa2_redo2.rds")
-saveRDS(SP, "Intermediate/DATA_sp_redo2.rds")
-saveRDS(FL, "Intermediate/DATA_fl_redo2.rds")
+saveRDS(FITSa, "Intermediate/FITS_aa.rds")
+saveRDS(FITSc, "Intermediate/FITS_ce.rds")
+saveRDS(FITSr, "Intermediate/FITS_rr.rds")
+saveRDS(FITSa2, "Intermediate/FITS_aa2.rds")
+saveRDS(FITSs, "Intermediate/FITS_sp.rds")
+saveRDS(FITSf, "Intermediate/FITS_fl.rds")
+saveRDS(AKDEa, "Intermediate/AKDE_aa.rds")
+saveRDS(AKDEc, "Intermediate/AKDE_ce.rds")
+saveRDS(AKDEr, "Intermediate/AKDE_rr.rds")
+saveRDS(AKDEa2, "Intermediate/AKDE_aa2.rds")
+saveRDS(AKDEs, "Intermediate/AKDE_sp.rds")
+saveRDS(AKDEf, "Intermediate/AKDE_fl.rds")
+saveRDS(AA, "Intermediate/DATA_aa.rds")
+saveRDS(CE, "Intermediate/DATA_ce.rds")
+saveRDS(RR, "Intermediate/DATA_rr.rds")
+saveRDS(AA2, "Intermediate/DATA_aa2.rds")
+saveRDS(SP, "Intermediate/DATA_sp.rds")
+saveRDS(FL, "Intermediate/DATA_fl.rds")
 
 ```
 
 ### Read data in 
 
 ```{r}
-AA <- readRDS("../Intermediate/DATA_aa_redo2.rds")
-CE <- readRDS("../Intermediate/DATA_ce_redo2.rds")
-RR <- readRDS("../Intermediate/DATA_rr_redo2.rds")
-AA2 <- readRDS("../Intermediate/DATA_aa2_redo2.rds")
-SP <- readRDS("../Intermediate/DATA_sp_redo2.rds")
-FL <- readRDS("../Intermediate/DATA_fl_redo2.rds")
+AA <- readRDS("../Intermediate/DATA_aa.rds")
+CE <- readRDS("../Intermediate/DATA_ce.rds")
+RR <- readRDS("../Intermediate/DATA_rr.rds")
+AA2 <- readRDS("../Intermediate/DATA_aa2.rds")
+SP <- readRDS("../Intermediate/DATA_sp.rds")
+FL <- readRDS("../Intermediate/DATA_fl.rds")
 ```
 
 ### Temporal Plot
