@@ -40,17 +40,6 @@ Some initial preparing
 # these options make stan run faster
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
-
-# function for clean plots
-theme_clean <- function() {
-  theme_minimal(base_family = "Barlow Semi Condensed") +
-    theme(panel.grid.minor = element_blank(),
-          plot.title = element_text(family = "BarlowSemiCondensed-Bold"),
-          axis.title = element_text(family = "BarlowSemiCondensed-Medium"),
-          strip.text = element_text(family = "BarlowSemiCondensed-Bold",
-                                    size = rel(1), hjust = 0),
-          strip.background = element_rect(fill = "grey80", color = NA))
-}
 ```
 
 ### Get data frame 
@@ -63,7 +52,7 @@ df <- readRDS("../Intermediate/DF_Performance.rds") %>%
          locations = num_points,
          overlap = overlap_mean) %>% 
   mutate(group = factor(group),
-         type = factor(ifelse(type == "R", "spread", "clumped")),
+         type = factor(ifelse(type == "R", "spread", "concentrated")),
          id = gsub("R", "S", id),
          weeks_std = (weeks - mean(weeks))/sd(weeks),
          locations_std = (locations - mean(locations))/sd(locations),
@@ -111,7 +100,6 @@ saveRDS(m_type, "Intermediate/Models/model_type.rds")
 Posterior validation check
 
 ```{r}
-
 # read in model
 m_type <- readRDS("../Intermediate/Models/model_type.rds")
 
@@ -130,7 +118,7 @@ m_type_pred <- m_type %>%
   mutate(.epred_prop = .epred/total_points) # change to proportion
 
 # box plot 
-ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
+p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_half_point(data = df, aes(color = type, y = prop),
                   transformation = position_quasirandom(width = 0.1),
                   side = "l", size = 3, alpha = 0.5) +
@@ -140,10 +128,14 @@ ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
   scale_y_continuous(lim = c(0.2,1)) +
   guides(color = "none", fill = "none") +
-  labs(x = "type", y = "Performance Value") +
-  theme_clean() +
-  theme_bw(base_family = "ArcherPro Book")
-
+  labs(y = "Performance Score",
+       title = "A") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 14),
+        axis.title.x = element_blank()) 
+  
+p1
 ```
 
 Plot group effects
@@ -158,8 +150,7 @@ ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
   scale_y_continuous(lim = c(0.2,1)) +
   guides(color = "none", fill = "none") +
-  labs(x = "type", y = "Performance Value") +
-  theme_clean() +
+  labs(x = "Sampling Regularity", y = "Performance Score") +
   theme_bw(base_family = "ArcherPro Book") +
   facet_wrap(~group)
 ```
@@ -244,10 +235,20 @@ Plot predictions
 ```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=8}
 
 # plot without group effects
-ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop, color = type, fill = type)) +
-  geom_line(stat = "smooth", aes(group = paste(type, .draw)), alpha = 0.03, se = FALSE, lwd = 0.05) + # smooth posterior lines grouped by type
+p2 <- ggplot(data = post_loc_draws, 
+             aes(x = locations_std, 
+                 y = .pred_prop, 
+                 color = type, 
+                 fill = type)) +
+  geom_line(stat = "smooth", 
+            aes(group = paste(type, .draw)), 
+            alpha = 0.03, 
+            se = FALSE, 
+            lwd = 0.05) + # smooth posterior lines grouped by type
   geom_line(data = mean_only, stat = "smooth", # add mean line
             aes(group = type), lwd = 1.1) +
+  geom_point(data = df,
+             aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
   annotate("segment", x = 1.15, xend = 1.15, y = -Inf, yend = 0.95,
                linetype = "dashed",
@@ -264,11 +265,16 @@ ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop, color = typ
   scale_x_continuous(limits = c(-1.4,2.5), 
                      breaks = seq(-2, 3, by = 0.5),
                      labels = paste0(seq(-2, 3, by = 0.5), "\n", num_locs)) + # label real weeks underneath standardized
-  labs(x = "Fine-Scale Volume (# locations)",
-       y = "Performance Value") +
-  theme_clean() +
-  theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), legend.position = "bottom")
+  labs(x = "Number of Recorded Locations",
+       y = "Performance Score",
+       title = "B") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_blank(), legend.position = "bottom") +
+  guides(color=guide_legend(title="Sampling Regularity")) +
+  theme_bw(base_family = "ArcherPro Book") 
+
+p2
 ```
 
 Plot with group effects
@@ -290,8 +296,8 @@ ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop, color = typ
   scale_x_continuous(limits = c(-1.4,2.5), 
                      breaks = seq(-2, 3, by = 0.5),
                      labels = paste0(seq(-2, 3, by = 0.5), "\n", num_locs)) + # label real weeks underneath standardized
-  labs(x = "Fine-Scale Volume (# locations)",
-       y = "Performance Value") +
+  labs(x = "Number of Recorded Locations",
+       y = "Performance Score") +
   theme_clean() +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.title = element_blank(), legend.position = "bottom") +
@@ -323,7 +329,6 @@ saveRDS(m_weeks, "Intermediate/Models/model_weeks.rds")
 
 Posterior validation check
 ```{r}
-
 # read in model
 m_weeks <- readRDS("../Intermediate/Models/model_weeks.rds")
 
@@ -361,11 +366,26 @@ Plot predictions
 ```{r, message=FALSE, warning=FALSE, fig.height=8, fig.width=8}
 
 # plot without group effects
-ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, color = type, fill = type)) +
-  geom_line(stat = "smooth", aes(group = paste(type, .draw)), alpha = 0.03, se = FALSE, lwd = 0.05) + # smooth posterior lines grouped by type
-  geom_line(data = mean_only, stat = "smooth", # add mean line
-            aes(group = type), lwd = 1.1) +
-  geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
+p3 <- ggplot(data = post_weeks_draws, 
+       aes(x = weeks_std, 
+           y = .pred_prop, 
+           color = type, 
+           fill = type)) +
+  geom_line(stat = "smooth", # smooth posterior lines grouped by type
+            aes(group = paste(type, .draw)), 
+            alpha = 0.03, 
+            se = FALSE, 
+            lwd = 0.05) + 
+  geom_line(data = mean_only, # add mean line
+            stat = "smooth", 
+            aes(group = type), 
+            lwd = 1.1) +
+  geom_point(data = df,
+             aes(y = prop), show.legend = FALSE) +
+  geom_hline(yintercept = 0.95, 
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) +
   annotate("segment", x = 1.4, xend = 1.4, y = -Inf, yend = 0.95,
                linetype = "dashed",
                color = "#feb82c",
@@ -381,12 +401,33 @@ ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, color = type,
   scale_x_continuous(limits = c(-1.4,2.5), 
                      breaks = seq(-2, 3, by = 0.5),
                      labels = paste0(seq(-2, 3, by = 0.5), "\n", num_weeks)) + # label real weeks underneath standardized
-  labs(x = "Coarse-Scale Volume (# weeks)",
-       y = "Performance Value") +
-  theme_clean() +
-  theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), legend.position = "bottom")
+  labs(x = "Number of Unique Weeks",
+       y = "Performance Score",
+       title = "C") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        legend.title = element_blank(), legend.position = "bottom") +
+  guides(color=guide_legend(title="Sampling Regularity")) +
+  theme_bw(base_family = "ArcherPro Book") 
+
+p3
 ```
+
+```{r, include=FALSE}
+
+p4 <- p1 + p2/p3 + plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+# Save plot
+file.name.model.preds <- paste0("model_prediction_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.model.preds),
+       plot = p4,
+       width = 3300,
+       height = 3000,
+       units = "px")
+```
+
 
 Plot with group effects
 ```{r, message=FALSE, warning=FALSE, fig.height=6, fig.width=8}
@@ -423,12 +464,21 @@ This plot compares the posterior distributions of the slope at varying standardi
 # clumped locations
 ame_locs_clumped <- m_locs %>% 
   emtrends(~ locations_std*type, var = "locations_std",
-           at = list(type = "clumped", locations_std = c(-1.3, -0.8, -0.3, 0.2)),
+           at = list(type = "concentrated", locations_std = c(-1.3, -0.8, -0.3, 0.2)),
            regrid = "response") %>% 
-  gather_emmeans_draws()
+  gather_emmeans_draws() %>% 
+  mutate(labels = str_c(as.character(locations_std), 
+                        " (", 
+                        as.character(round((locations_std * sd(df$locations)) + mean(df$locations)),
+                                     digits = 0), 
+                        ")", 
+                        sep = ""))
+
+levels.1 <- c("-1.3 (21)", "-0.8 (142)", "-0.3 (264)", "0.2 (385)")
 
 
-p1 <- ggplot(ame_locs_clumped, aes(x = .value, fill = factor(locations_std))) +
+p1 <- ggplot(ame_locs_clumped, aes(x = .value, 
+                                   fill = factor(labels,levels = levels.1))) +
   geom_vline(xintercept = 0) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
@@ -437,26 +487,34 @@ p1 <- ggplot(ame_locs_clumped, aes(x = .value, fill = factor(locations_std))) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Standardized Locations",
        #caption = "80% and 95% credible intervals shown in black",
-       title = "A") +
-  theme_clean() +
+       title = "A",
+       caption = "Effect of Increasing Locations on Concentrated Regimes") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position=c(.73,.65),
-        legend.title = element_text(size=9), #change legend title font size
-        legend.text = element_text(size=7),
+        legend.title = element_text(size=14), #change legend title font size
+        legend.text = element_text(size=11),
         legend.key.size = unit(0.5, 'cm'), #change legend key size
         legend.key.height = unit(0.5, 'cm'), #change legend key height
         legend.key.width = unit(0.5, 'cm'), #change legend key width 
         legend.background = element_rect(fill=alpha(0.1)),
-        axis.title = element_blank())
+        axis.title = element_blank(),
+        plot.caption = ggtext::element_markdown(hjust = 0.5))
 
 # spread locations
 ame_locs_spread <- m_locs %>% 
   emtrends(~ locations_std*type, var = "locations_std",
            at = list(type = "spread", locations_std = c(-1.3, -0.8, -0.3, 0.2)),
            regrid = "response") %>% 
-  gather_emmeans_draws()
+  gather_emmeans_draws() %>% 
+  mutate(labels = str_c(as.character(locations_std), 
+                        " (", 
+                        as.character(round((locations_std * sd(df$locations)) + mean(df$locations)),
+                                     digits = 0), 
+                        ")", 
+                        sep = ""))
 
-p2 <- ggplot(ame_locs_spread, aes(x = .value, fill = factor(locations_std))) +
+p2 <- ggplot(ame_locs_spread, aes(x = .value, 
+                                  fill = factor(labels,levels = levels.1))) +
   geom_vline(xintercept = 0) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
@@ -465,28 +523,37 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value, fill = factor(locations_std))) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Standardized Locations",
        #caption = "80% and 95% credible intervals shown in black",
-       title = "B") +
-  theme_clean() +
+       title = "B",
+       caption = "Effect of Increasing Locations on Spread Regimes") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position=c(.7,.65),
-        legend.title = element_text(size=9), #change legend title font size
-        legend.text = element_text(size=7),
+        legend.title = element_text(size=14), #change legend title font size
+        legend.text = element_text(size=11),
         legend.key.size = unit(0.5, 'cm'), #change legend key size
         legend.key.height = unit(0.5, 'cm'), #change legend key height
         legend.key.width = unit(0.5, 'cm'), #change legend key width 
         legend.background = element_rect(fill=alpha(0.1)),
         axis.text.y=element_blank(),
-        axis.title = element_blank())
+        axis.title = element_blank(),
+        plot.caption = ggtext::element_markdown(hjust = 0.5))
 
 # clumped weekss
 ame_weeks_clumped <- m_weeks %>% 
   emtrends(~ weeks_std*type, var = "weeks_std",
-           at = list(type = "clumped", weeks_std = c(-1.3, -0.8, -0.3, 0.2)),
+           at = list(type = "concentrated", weeks_std = c(-1.3, -0.8, -0.3, 0.2)),
            regrid = "response") %>% 
-  gather_emmeans_draws()
+  gather_emmeans_draws() %>% 
+  mutate(labels = str_c(as.character(weeks_std), 
+                        " (", 
+                        as.character(round((weeks_std * sd(df$weeks)) + mean(df$weeks)),
+                                     digits = 0), 
+                        ")", 
+                        sep = ""))
 
+levels.2 <- c("-1.3 (1)", "-0.8 (2)", "-0.3 (4)", "0.2 (6)")
 
-p3 <- ggplot(ame_weeks_clumped, aes(x = .value, fill = factor(weeks_std))) +
+p3 <- ggplot(ame_weeks_clumped, aes(x = .value, 
+                                    fill = factor(labels, levels = levels.2))) +
   geom_vline(xintercept = 0) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
@@ -495,26 +562,34 @@ p3 <- ggplot(ame_weeks_clumped, aes(x = .value, fill = factor(weeks_std))) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Standardized Weeks",
        #caption = "80% and 95% credible intervals shown in black",
-       title = "C") +
-  theme_clean() +
+       title = "C",
+       caption = "Effect of Increasing Weeks on Concentrated Regimes") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position=c(.7,.65),
-        legend.title = element_text(size=9), #change legend title font size
-        legend.text = element_text(size=7),
+        legend.title = element_text(size=14), #change legend title font size
+        legend.text = element_text(size=11),
         legend.key.size = unit(0.5, 'cm'), #change legend key size
         legend.key.height = unit(0.5, 'cm'), #change legend key height
         legend.key.width = unit(0.5, 'cm'), #change legend key width 
         legend.background = element_rect(fill=alpha(0.1)),
-        axis.title = element_blank())
+        axis.title = element_blank(),
+        plot.caption = ggtext::element_markdown(hjust = 0.5))
 
 # spread weeks
 ame_weeks_spread <- m_weeks %>% 
   emtrends(~ weeks_std*type, var = "weeks_std",
            at = list(type = "spread", weeks_std = c(-1.3, -0.8, -0.3, 0.2)),
            regrid = "response") %>% 
-  gather_emmeans_draws()
+  gather_emmeans_draws() %>% 
+  mutate(labels = str_c(as.character(weeks_std), 
+                        " (", 
+                        as.character(round((weeks_std * sd(df$weeks)) + mean(df$weeks)),
+                                     digits = 0), 
+                        ")", 
+                        sep = ""))
 
-p4 <- ggplot(ame_weeks_spread, aes(x = .value, fill = factor(weeks_std))) +
+p4 <- ggplot(ame_weeks_spread, aes(x = .value, 
+                                   fill = factor(labels, levels = levels.2))) +
   geom_vline(xintercept = 0) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
@@ -523,18 +598,19 @@ p4 <- ggplot(ame_weeks_spread, aes(x = .value, fill = factor(weeks_std))) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Standardized Weeks",
        #caption = "80% and 95% credible intervals shown in black",
-       title = "D") +
-  theme_clean() +
+       title = "D",
+       caption = "Effect of Increasing Weeks on Spread Regimes") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position=c(.7,.65),
-        legend.title = element_text(size=9), #change legend title font size
-        legend.text = element_text(size=7),
+        legend.title = element_text(size=14), #change legend title font size
+        legend.text = element_text(size=11),
         legend.key.size = unit(0.5, 'cm'), #change legend key size
         legend.key.height = unit(0.5, 'cm'), #change legend key height
         legend.key.width = unit(0.5, 'cm'), #change legend key width 
         legend.background = element_rect(fill=alpha(0.1)),
         axis.text.y=element_blank(),
-        axis.title = element_blank())
+        axis.title = element_blank(),
+        plot.caption = ggtext::element_markdown(hjust = 0.5))
 ```
 
 Plot
@@ -583,9 +659,23 @@ add_global_label <- function(pwobj, Xlab = NULL, Ylab = NULL, Xgap = 0.03, Ygap 
 }
 
 # plot together
-((p1 + p2 + p3 + p4) + plot_layout(ncol = 2)) %>% 
+p5 <- ((p1 + p2 + p3 + p4) + plot_layout(ncol = 2)) %>% 
   add_global_label(Ylab = "Density",
                    Xlab = "Instantaeous Slope Coefficients",
-                   size = 5)
+                   size = 7)
+
+p5
+```
+
+```{r, include=FALSE}
+# Save plot
+file.name.model.slopes <- paste0("model_slope_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.model.slopes),
+       plot = p5,
+       width = 3300,
+       height = 3000,
+       units = "px")
 ```
 
