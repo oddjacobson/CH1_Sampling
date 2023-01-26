@@ -106,14 +106,18 @@ p1 <- ggplot(data=df, aes(x = id)) +
   theme(legend.title = element_blank(), legend.position = "bottom",
         axis.text = element_text(size = 10),
         axis.title = element_text(size = 15),
-        strip.text = element_text(size = 15)) # size of facet wrap title
+        strip.text = element_text(size = 15), # size of facet wrap title
+        legend.key.size = unit(1.5, 'cm'), #change legend key size
+        legend.key.height = unit(1.5, 'cm'), #change legend key height
+        legend.key.width = unit(1.5, 'cm'), #change legend key width
+        legend.text = element_text(size=13)) 
 
 p1
 ```
 
 ```{r, include=FALSE}
 # Save plot
-file.name.crossings <- paste0("HRC_plots_",
+file.name.crossings <- paste0("DOF_plots_",
                                 format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
 
 ggsave(here::here("Figures", file.name.crossings),
