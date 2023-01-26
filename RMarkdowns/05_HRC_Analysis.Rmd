@@ -64,7 +64,7 @@ concentrated <- df %>% filter(type == "concentrated")
 spread <- df %>% filter(type == "spread")
 
 # ridiculously long code for plot to make key look correct
-ggplot(data=df, aes(x = id)) + 
+p1 <- ggplot(data=df, aes(x = id)) + 
   geom_point(data = concentrated,
              aes(y = xings_sampled, color = "Concentrated", shape = "Estimate"),size = 2, 
              stat="identity", position=position_nudge(x = 0.1)) + 
@@ -94,7 +94,7 @@ ggplot(data=df, aes(x = id)) +
   scale_linetype_manual(values = linetype) +
   labs(color = names(colors), linetype = names(linetype), shape = names(shape)) +
   guides(color=guide_legend(override.aes=list(shape=15, size = 5, linetype = 0)))+
-  labs(y = "Estimated Number of Home Range Crossings (HRCs)") +
+  labs(y = "Estimated Effective Sample Size", x = "Sampling Regime ID") +
   theme_bw(base_family = "ArcherPro Book") +
   # geom_rect(data = subset(df, group == "CE"),
   #           aes(size = 1.5),
@@ -103,6 +103,22 @@ ggplot(data=df, aes(x = id)) +
   #           show.legend = FALSE) +
   facet_wrap(~group) +
   theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), legend.position = "bottom")
+  theme(legend.title = element_blank(), legend.position = "bottom",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 15),
+        strip.text = element_text(size = 15)) # size of facet wrap title
+
+p1
 ```
 
+```{r, include=FALSE}
+# Save plot
+file.name.crossings <- paste0("HRC_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.crossings),
+       plot = p1,
+       width = 3400,
+       height = 2200,
+       units = "px")
+```

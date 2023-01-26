@@ -1,0 +1,131 @@
+---
+title: "06_Performance_Maps"
+author: "Odd Jacobson"
+date: "2023-01-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document plots the HR estimates of all the emulated sampling regimes over the data from the complete segments.
+
+Load packages 
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ctmm)
+library(sf)
+library(lubridate)
+library(janitor)
+library(ggmap)
+```
+
+## CE Group
+
+Get data and contours 
+
+```{r}
+# change to sf objects
+ce_data_sf <- readRDS("Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_akde_sf <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_akde_CI <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name )) %>% # get id by subsetting everything before space in name
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Get data from complete segments
+
+```{r}
+# get all points
+ce_all_data <- readRDS("Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot
+
+```{r}
+
+# get colors
+colors <- c("missing points" = "#D55E00", "used points" = "#F0E442") 
+
+# plot
+p1 <- ggplot() +
+  geom_sf(data = ce_all_data, 
+          aes(color = "missing points"),
+          inherit.aes = FALSE,
+          size = 1.5, alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_data_sf, 
+          aes(color = "used points"),
+          inherit.aes = FALSE, 
+          size = 1.5, alpha = 0.8, alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.700,677.500), ylim=c(1162.000, 1164.100)) +
+  scale_color_manual(values = colors) +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 3)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~id, nrow = 2) 
+
+p1
+```
+
+```{r, include=FALSE}
+# Save plot
+file.name.performance <- paste0("CE_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p1,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
