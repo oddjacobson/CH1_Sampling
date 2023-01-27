@@ -15,6 +15,7 @@ Load packages
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(janitor)
+library(gt)
 ```
 
 
@@ -23,7 +24,7 @@ library(janitor)
 ```{r}
 
 # get "true" data from complete segments
-hr_true <- readRDS("../Intermediate/DF_True_HRs.rds") %>%
+hr_true <- readRDS("Intermediate/DF_True_HRs.rds") %>%
   clean_names() %>% 
   rename(tau_true = tau,
          tau_true_high = tau_high,
@@ -31,7 +32,7 @@ hr_true <- readRDS("../Intermediate/DF_True_HRs.rds") %>%
   dplyr::select(group, tau_true, tau_true_high, tau_true_low)
 
 # get data frame 
-df <- readRDS("../Intermediate/DF_Performance.rds") %>% 
+df <- readRDS("Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random) %>% 
   merge(hr_true, by = "group") %>% 
@@ -45,9 +46,33 @@ df <- readRDS("../Intermediate/DF_Performance.rds") %>%
          xings_sampled_high = hours/tau_low,
          xings_true = hours/tau_true, # xings_true is number of xings calculated using tau from complete segments
          xings_true_high = hours/tau_true_low,
-         xings_true_low = hours/tau_true_high) %>% 
-  dplyr::select(group,id, type, hours,xings_sampled,xings_sampled_low, xings_sampled_high, xings_true, xings_true_high, xings_true_low) 
+         xings_true_low = hours/tau_true_high,
+         xings_diff = xings_sampled - xings_true,
+         day_section = str_sub(id, 2)) %>% 
+  dplyr::select(group,id, type, hours,xings_sampled,xings_sampled_low, xings_sampled_high, xings_true, xings_true_high, xings_true_low, xings_diff, tau_true, tau, day_section, num_points, num_unidays) 
 ```
+
+### Table
+
+```{r}
+gt_table <- df %>% 
+  dplyr::select(group, id, hours, tau, tau_true, xings_sampled, xings_true, xings_diff) %>%
+  mutate(tau_diff = tau - tau_true) %>%
+  relocate(tau_diff, .after = tau_true) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  gt(groupname_col = "group", rowname_col = "id")
+
+gt_table %>% 
+ summary_rows(
+  columns = c("xings_sampled", "xings_true", "xings_diff"), 
+  fns = list(
+   Sum = ~sum(.),
+   Average = ~mean(.),
+   "Standard Deviation" = ~sd(.)
+  )
+ )
+```
+
 
 ### Make plot
 
@@ -94,7 +119,9 @@ p1 <- ggplot(data=df, aes(x = id)) +
   scale_linetype_manual(values = linetype) +
   labs(color = names(colors), linetype = names(linetype), shape = names(shape)) +
   guides(color=guide_legend(override.aes=list(shape=15, size = 5, linetype = 0)))+
-  labs(y = "Estimated Effective Sample Size", x = "Sampling Regime ID") +
+  labs(y = "Effective Sample Size", 
+       x = "Sampling Regime ID",
+       title = "B") +
   theme_bw(base_family = "ArcherPro Book") +
   # geom_rect(data = subset(df, group == "CE"),
   #           aes(size = 1.5),
@@ -106,11 +133,13 @@ p1 <- ggplot(data=df, aes(x = id)) +
   theme(legend.title = element_blank(), legend.position = "bottom",
         axis.text = element_text(size = 10),
         axis.title = element_text(size = 15),
+        axis.title.y = element_text(size = 15, vjust = -15),
         strip.text = element_text(size = 15), # size of facet wrap title
-        legend.key.size = unit(1.5, 'cm'), #change legend key size
-        legend.key.height = unit(1.5, 'cm'), #change legend key height
-        legend.key.width = unit(1.5, 'cm'), #change legend key width
-        legend.text = element_text(size=13)) 
+        legend.key.size = unit(1, 'cm'), #change legend key size
+        legend.key.height = unit(1, 'cm'), #change legend key height
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        legend.text = element_text(size=13),
+        plot.title = element_text(size = 20)) 
 
 p1
 ```
@@ -126,3 +155,48 @@ ggsave(here::here("Figures", file.name.crossings),
        height = 2200,
        units = "px")
 ```
+
+```{r}
+p2 <- ggplot(data = df,
+       aes(x = type, y = xings_diff)) +
+  geom_violin(aes(color = type, fill = type), 
+              alpha = 0.4)  + 
+  stat_summary(fun = "mean",
+               geom = "point",
+               aes(color = type),
+               size = 2) +
+  scale_fill_viridis_d(option = "plasma", end = 0.8) +
+  scale_color_viridis_d(option = "plasma", end = 0.8) +
+  labs(y = "Difference Between 'Estimated' and 'True' Effective Sample Size", 
+       title = "A") +
+  theme_bw() + 
+  theme(axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        plot.title = element_text(size = 20)) +
+  coord_flip() + 
+  #facet_wrap(~day_section) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) 
+
+p2
+```
+
+```{r, include=FALSE}
+
+p3 <- p2/p1
+
+# Save plot
+file.name.crossings <- paste0("DOF_plots_combined",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.crossings),
+       plot = p3,
+       width = 3000,
+       height = 3200,
+       units = "px")
+```
+

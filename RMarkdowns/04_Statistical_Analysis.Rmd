@@ -273,7 +273,12 @@ p2 <- ggplot(data = post_loc_draws,
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 16),
         plot.title = element_text(size = 20),
-        legend.title = element_blank(), legend.position = "bottom") +
+        legend.title = element_blank(), 
+        legend.position = "bottom",
+        legend.key.size = unit(1, 'cm'), #change legend key size
+        legend.key.height = unit(1, 'cm'), #change legend key height
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        legend.text = element_text(size=13)) +
   guides(color=guide_legend(title="Sampling Regularity")) 
   
 
@@ -411,7 +416,12 @@ p3 <- ggplot(data = post_weeks_draws,
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 16),
         plot.title = element_text(size = 20),
-        legend.title = element_blank(), legend.position = "bottom") +
+        legend.title = element_blank(), 
+        legend.position = "bottom",
+        legend.key.size = unit(1, 'cm'), #change legend key size
+        legend.key.height = unit(1, 'cm'), #change legend key height
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        legend.text = element_text(size=13)) +
   guides(color=guide_legend(title="Sampling Regularity")) 
 
 p3
@@ -496,7 +506,10 @@ levels.1 <- c("Low (21 or -1.3std)", "Med (203 or -0.55std)", "High (385 or 0.2s
 
 p1 <- ggplot(ame_locs_clumped, aes(x = .value, 
                                    fill = factor(labels,levels = levels.1))) +
-  geom_vline(xintercept = 0) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
@@ -546,7 +559,10 @@ ame_locs_spread <- cred_intervals_locs_spread %>%
 
 p2 <- ggplot(ame_locs_spread, aes(x = .value, 
                                   fill = factor(labels,levels = levels.1))) +
-  geom_vline(xintercept = 0) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
@@ -600,7 +616,10 @@ levels.2 <- c("Low (1 or -1.3std)", "Med (3 or -0.55std)", "High (6 or 0.2std)")
 
 p3 <- ggplot(ame_weeks_clumped, aes(x = .value, 
                                     fill = factor(labels, levels = levels.2))) +
-  geom_vline(xintercept = 0) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
@@ -647,7 +666,10 @@ ame_weeks_spread <- cred_intervals_weeks_spread %>%
 
 p4 <- ggplot(ame_weeks_spread, aes(x = .value, 
                                    fill = factor(labels, levels = levels.2))) +
-  geom_vline(xintercept = 0) +
+  geom_vline(xintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
                slab_alpha = 0.75) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
