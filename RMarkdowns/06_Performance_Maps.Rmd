@@ -68,6 +68,33 @@ ce_all_data <- readRDS("Intermediate/DATA_ce.rds") %>%
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+## getting all thinned data
+# get unique ids
+ids <- unique(ce_data_sf$id)
+
+# make list
+ce_data_list <- ce_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(ce_data_list) <- ids
+
+# make empty list to be filled
+ce_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  ce_thinned_data[[i]] <- anti_join(as.data.frame(ce_all_data), ce_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+ce_thinned_data <- as.data.frame(do.call(rbind, ce_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = str_sub(id, 1,2)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
 ```
 
 Plot
@@ -75,18 +102,19 @@ Plot
 ```{r}
 
 # get colors
-colors <- c("missing points" = "#D55E00", "used points" = "#F0E442") 
+colors <- c("missing points" = "#de4968", "used points" = "#40bd72")
+shape <- c("missing points" = 1, "used points" = 16)
+size <- c("missing points" = 0.8, "used points" = 1.2)
+labels <- c("missing points", "used points")
 
 # plot
 p1 <- ggplot() +
-  geom_sf(data = ce_all_data, 
-          aes(color = "missing points"),
-          inherit.aes = FALSE,
-          size = 1.5, alpha = 0.3, size = 0.3) +
   geom_sf(data = ce_data_sf, 
-          aes(color = "used points"),
-          inherit.aes = FALSE, 
-          size = 1.5, alpha = 0.8, alpha = 0.3, size = 0.3) +
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 0.9) +
+  geom_sf(data = ce_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = ce_akde_CI, 
           inherit.aes = FALSE, 
           fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
@@ -99,14 +127,17 @@ p1 <- ggplot() +
                               style = 'ticks') +
   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
            xlim=c(675.700,677.500), ylim=c(1162.000, 1164.100)) +
-  scale_color_manual(values = colors) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
   scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
   scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
-  guides(color=guide_legend(override.aes=list(size = 3)))+
+  guides(color=guide_legend(override.aes=list(size = 8)))+
   labs( x = "Easting (km)", y = "Northing (km)") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position="bottom", 
         legend.title = element_blank(),
+        legend.text=element_text(size=14),
         #axis.text.x = element_text(angle=45, hjust = 1),
         axis.title = element_blank(),
         axis.text = element_blank(),
