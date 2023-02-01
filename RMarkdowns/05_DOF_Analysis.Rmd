@@ -157,6 +157,14 @@ ggsave(here::here("Figures", file.name.crossings),
 ```
 
 ```{r}
+
+# get summary stats
+mean(df$xings_true[df$type=="spread"])
+mean(df$xings_true[df$type=="concentrated"])
+sd(df$xings_true[df$type=="spread"])
+sd(df$xings_true[df$type=="concentrated"])
+
+# plot difference between true and estimated
 p2 <- ggplot(data = df,
        aes(x = type, y = xings_diff)) +
   geom_violin(aes(color = type, fill = type), 
