@@ -511,11 +511,12 @@ p1 <- ggplot(ame_locs_clumped, aes(x = .value,
              color = "black", 
              size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
-               slab_alpha = 0.75) +
-  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
-                     aes(x = .value, color = after_scale(fill)),
-                     alpha = 10) +
+               slab_alpha = 0.65) +
+  stat_pointinterval(position = position_dodge(width = -1, preserve = "single"),
+                     aes(x = .value, color = factor(labels, levels = rev(levels.1))),
+                     alpha = 10, show.legend = FALSE) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
+  scale_color_viridis_d(option = "plasma", begin = 0.4, end = 0) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Amount of Locations",
@@ -567,14 +568,15 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value,
              color = "black", 
              size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
-               slab_alpha = 0.75) +
-  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
-                     aes(x = .value, color = after_scale(fill)),
-                     alpha = 10) +
+               slab_alpha = 0.65) +
+  stat_pointinterval(position = position_dodge(width = -1, preserve = "single"),
+                     aes(x = .value, color = factor(labeslab_alphaslarev(b_alphasla)b_alpha           =         alpha =
+   10, show.legend = FALSE) +
+  scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
-  labs(x = "Instantaneous Slope Coefficients", 
-       y = "Density", fill = "Amount of Locations",
+  labs(x = "Instantaneous Slope Co
+  scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
        #caption = "80% and 95% credible intervals shown in black",
        title = "B",
        subtitle = "Spread Sampling") +
@@ -627,11 +629,12 @@ p3 <- ggplot(ame_weeks_clumped, aes(x = .value,
              color = "black", 
              size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
-               slab_alpha = 0.75) +
-  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
-                     aes(x = .value, color = after_scale(fill)),
-                     alpha = 10) +
+               slab_alpha = 0.65) +
+  stat_pointinterval(position = position_dodge(width = -1, preserve = "single"),
+                     aes(x = .value, color = factor(labels, levels = rev(levels.2))),
+                     alpha = 10, show.legend = FALSE) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
+  scale_color_viridis_d(option = "plasma", begin = 0.4, end = 0) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Amount of Weeks",
@@ -681,7 +684,7 @@ p4 <- ggplot(ame_weeks_spread, aes(x = .value,
              size = 1, alpha = 0.5) +
   stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
                slab_alpha = 0.75) +
-  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single", reverse = TRUE),
+  stat_pointinterval(position = position_dodge2(width = -.7, preserve = "single", reverse = FALSE),
                      aes(color = after_scale(fill)),
                      alpha = 10) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
