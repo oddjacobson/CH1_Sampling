@@ -510,8 +510,11 @@ p1 <- ggplot(ame_locs_clumped, aes(x = .value,
              linetype = "dashed",
              color = "black", 
              size = 1, alpha = 0.5) +
-  stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
+  stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
                slab_alpha = 0.75) +
+  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
+                     aes(x = .value, color = after_scale(fill)),
+                     alpha = 10) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
@@ -563,8 +566,11 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value,
              linetype = "dashed",
              color = "black", 
              size = 1, alpha = 0.5) +
-  stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
+  stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
                slab_alpha = 0.75) +
+  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
+                     aes(x = .value, color = after_scale(fill)),
+                     alpha = 10) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
@@ -620,8 +626,11 @@ p3 <- ggplot(ame_weeks_clumped, aes(x = .value,
              linetype = "dashed",
              color = "black", 
              size = 1, alpha = 0.5) +
-  stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
+  stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
                slab_alpha = 0.75) +
+  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single"),
+                     aes(x = .value, color = after_scale(fill)),
+                     alpha = 10) +
   scale_fill_viridis_d(option = "plasma", begin = 0, end = 0.4) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
@@ -670,8 +679,11 @@ p4 <- ggplot(ame_weeks_spread, aes(x = .value,
              linetype = "dashed",
              color = "black", 
              size = 1, alpha = 0.5) +
-  stat_halfeye(.width = c(0.8, 0.95), point_interval = "median_hdi",
+  stat_halfeye(.width = c(0.8, 0.95), point_interval = NULL,
                slab_alpha = 0.75) +
+  stat_pointinterval(position = position_dodge(width = -.7, preserve = "single", reverse = TRUE),
+                     aes(color = after_scale(fill)),
+                     alpha = 10) +
   scale_fill_viridis_d(option = "plasma", begin = 0.6, end = 1) +
   coord_cartesian(xlim = c(-0.05,0.5)) +
   labs(x = "Instantaneous Slope Coefficients", 
