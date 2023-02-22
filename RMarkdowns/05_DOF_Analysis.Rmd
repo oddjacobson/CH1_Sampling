@@ -1,5 +1,5 @@
 ---
-title: "HRC_Analysis"
+title: "Effective Sample Size Analysis"
 author: "Odd Jacobson"
 date: "2023-01-11"
 output: html_document
@@ -16,6 +16,7 @@ Load packages
 library(tidyverse)
 library(janitor)
 library(gt)
+library(patchwork)
 ```
 
 
@@ -24,7 +25,7 @@ library(gt)
 ```{r}
 
 # get "true" data from complete segments
-hr_true <- readRDS("Intermediate/DF_True_HRs.rds") %>%
+hr_true <- readRDS("../Intermediate/DF_True_HRs.rds") %>%
   clean_names() %>% 
   rename(tau_true = tau,
          tau_true_high = tau_high,
@@ -32,7 +33,7 @@ hr_true <- readRDS("Intermediate/DF_True_HRs.rds") %>%
   dplyr::select(group, tau_true, tau_true_high, tau_true_low)
 
 # get data frame 
-df <- readRDS("Intermediate/DF_Performance.rds") %>% 
+df <- readRDS("../Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random) %>% 
   merge(hr_true, by = "group") %>% 
@@ -193,7 +194,7 @@ p2 <- ggplot(data = df,
 p2
 ```
 
-```{r, include=FALSE}
+```{r, evaluate = FALSE, include=FALSE}
 
 p3 <- p2/p1
 
