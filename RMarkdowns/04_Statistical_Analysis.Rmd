@@ -2,7 +2,7 @@
 title: "Statistical Analysis"
 author: "Odd Jacobson"
 date: "2022-12-13"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -33,6 +33,7 @@ library(cmdstanr)
 library(viridis)
 library(broom.mixed)
 library(ggthemes)
+library(marginaleffects)
 ```
 
 Some initial preparing
@@ -44,7 +45,7 @@ options(mc.cores = parallel::detectCores())
 
 ### Get data frame 
 
-```{r}
+```{r, warning = FALSE, fig.height=8, fig.width=6}
 df <- readRDS("../Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random,
@@ -62,7 +63,49 @@ df <- readRDS("../Intermediate/DF_Performance.rds") %>%
   dplyr::select(group,id,prop,freq,total_points,overlap,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, raw_locs_std, raw_locs, type, hours, tau_low, tau, tau_high)
 ```
 
-## Models
+Take a look at the data and get initial idea using box plots.
+
+```{r, eval = FALSE}
+# box plot
+box_plot <- ggplot(data = df, aes(x = type, y = prop)) +
+  geom_half_point(data = df, aes(color = type),
+                  transformation = position_quasirandom(width = 0.1),
+                  side = "l", size = 3, alpha = 0.5) +
+  geom_half_boxplot(aes(fill = type), alpha = 0.7, side = "r", outlier.shape = NA) +
+  scale_fill_viridis_d(option = "plasma", end = 0.8) +
+  scale_color_viridis_d(option = "plasma", end = 0.8) +
+  geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
+  scale_y_continuous(lim = c(0.2,1)) +
+  guides(color = "none", fill = "none") +
+  labs(y = "Performance Score") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(axis.text = element_text(size = 15),
+        axis.title.y = element_text(size = 20),
+        axis.title.x = element_blank(),
+        plot.title = element_text(size = 20))
+
+box_plot
+```
+
+```{r, eval = FALSE, include = FALSE}
+
+# Save plot
+file.name.model.preds <- paste0("box_plot_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.model.preds),
+       plot = box_plot,
+       width = 3500,
+       height = 3000,
+       units = "px")
+
+```
+
+```{r pressure, echo=FALSE, fig.cap="A caption", out.width = '100%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/model_prediction_plots_2023_02_23_171404.jpg")
+```
+
+## Statistic Models
 
 We used binomial models with the number of locations that fall within the UD estimate indicating "successes", and the total points indicate the number of trials.
 
@@ -116,13 +159,16 @@ m_type_pred <- m_type %>%
                                total_points = df$total_points,
                                group = df$group)) %>% 
   mutate(.epred_prop = .epred/total_points) # change to proportion
+```
 
-# box plot 
-p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
+
+```{r, eval = FALSE}
+# plot posterior per group 
+ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_half_point(data = df, aes(color = type, y = prop),
                   transformation = position_quasirandom(width = 0.1),
                   side = "l", size = 3, alpha = 0.5) +
-  geom_half_boxplot(aes(fill = type), alpha = 0.7, side = "r", outlier.shape = NA) + 
+  stat_halfeye(aes(fill = type), alpha = 0.7, outlier.shape = NA) + 
   scale_fill_viridis_d(option = "plasma", end = 0.8) +
   scale_color_viridis_d(option = "plasma", end = 0.8) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
@@ -134,26 +180,35 @@ p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   theme(axis.text = element_text(size = 15),
         axis.title.y = element_text(size = 20),
         axis.title.x = element_blank(),
-        plot.title = element_text(size = 20)) 
-  
-p1
+        plot.title = element_text(size = 20)) +
+  facet_wrap(~group)
 ```
 
-Plot group effects
+```{r pressure, echo=FALSE, fig.cap="A caption", out.width = '100%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/model_prediction_plots_2023_02_23_171404.jpg")
+```
+
+
+Plot posterior across groups
 ```{r, warning=FALSE, message=FALSE, fig.height=8, fig.width=8}
-ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
+p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_half_point(data = df, aes(color = type, y = prop),
                   transformation = position_quasirandom(width = 0.1),
                   side = "l", size = 3, alpha = 0.5) +
-  geom_half_boxplot(aes(fill = type), alpha = 0.7, side = "r", outlier.shape = NA) + 
+  stat_pointinterval(aes(color = type), size = 10, alpha = 0.5) + 
   scale_fill_viridis_d(option = "plasma", end = 0.8) +
   scale_color_viridis_d(option = "plasma", end = 0.8) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
   scale_y_continuous(lim = c(0.2,1)) +
   guides(color = "none", fill = "none") +
-  labs(x = "Sampling Regularity", y = "Performance Score") +
+  labs(y = "Performance Score",
+       title = "A") +
   theme_bw(base_family = "ArcherPro Book") +
-  facet_wrap(~group)
+  theme(axis.text = element_text(size = 15),
+        axis.title.y = element_text(size = 20),
+        axis.title.x = element_blank(),
+        plot.title = element_text(size = 20))
+
 ```
 
 Summary stats
@@ -194,7 +249,7 @@ m_locs <- brm(
 saveRDS(m_locs, "Intermediate/Models/model_locations.rds")
 ```
 
-Posterior validation check
+### Posterior validation check
 ```{r}
 
 # read in model
@@ -241,13 +296,15 @@ p2 <- ggplot(data = post_loc_draws,
                  y = .pred_prop, 
                  color = type, 
                  fill = type)) +
-  geom_line(stat = "smooth", 
+   geom_line(stat = "smooth", # smooth posterior lines grouped by type
             aes(group = paste(type, .draw)), 
-            alpha = 0.03, 
+            alpha = 0.05, 
             se = FALSE, 
-            lwd = 0.05) + # smooth posterior lines grouped by type
-  geom_line(data = mean_only, stat = "smooth", # add mean line
-            aes(group = type), lwd = 1.1) +
+            lwd = 0.01) + 
+  geom_line(data = mean_only, # add mean line
+            stat = "smooth", 
+            aes(group = type), 
+            lwd = 0.7) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
@@ -381,13 +438,13 @@ p3 <- ggplot(data = post_weeks_draws,
            fill = type)) +
   geom_line(stat = "smooth", # smooth posterior lines grouped by type
             aes(group = paste(type, .draw)), 
-            alpha = 0.03, 
+            alpha = 0.05, 
             se = FALSE, 
-            lwd = 0.05) + 
+            lwd = 0.01) + 
   geom_line(data = mean_only, # add mean line
             stat = "smooth", 
             aes(group = type), 
-            lwd = 1.1) +
+            lwd = 0.7) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, 
@@ -579,7 +636,7 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value,
        y = "Density", fill = "Amount of Locations",
        #caption = "80% and 95% credible intervals shown in black",
        title = "B",
-       subtitle = "Concentrated Sampling") +
+       subtitle = "Spread Sampling") +
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position=c(.73,.65),
         legend.title = element_text(size=14), #change legend title font size
