@@ -102,6 +102,7 @@ d_sum <- data %>%
   summarise(n = length(timestamp))
 ```
 
+
 Plot
 ```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
 d_sum %>% 
@@ -123,6 +124,7 @@ d_sum %>%
   scale_x_date(breaks = scales::date_breaks("1 years"), labels = scales::date_format("%Y")) + 
   #guides(colour = guide_legend(override.aes = list(size=10))) +
   labs(x = "Date", y = "") +
+  theme(axis.text.y = element_text(size = 12)) +
   ggtitle("Observation Periods") +
   facet_grid(group ~ ., drop = TRUE)  
 ```

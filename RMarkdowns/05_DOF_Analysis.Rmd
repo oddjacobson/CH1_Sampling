@@ -121,8 +121,7 @@ p1 <- ggplot(data=df, aes(x = id)) +
   labs(color = names(colors), linetype = names(linetype), shape = names(shape)) +
   guides(color=guide_legend(override.aes=list(shape=15, size = 5, linetype = 0)))+
   labs(y = "Effective Sample Size", 
-       x = "Sampling Regime ID",
-       title = "B") +
+       x = "Sampling Regime ID") +
   theme_bw(base_family = "ArcherPro Book") +
   # geom_rect(data = subset(df, group == "CE"),
   #           aes(size = 1.5),
@@ -134,7 +133,7 @@ p1 <- ggplot(data=df, aes(x = id)) +
   theme(legend.title = element_blank(), legend.position = "bottom",
         axis.text = element_text(size = 10),
         axis.title = element_text(size = 15),
-        axis.title.y = element_text(size = 15, vjust = -15),
+        #axis.title.y = element_text(size = 15, vjust = -15),
         strip.text = element_text(size = 15), # size of facet wrap title
         legend.key.size = unit(1, 'cm'), #change legend key size
         legend.key.height = unit(1, 'cm'), #change legend key height

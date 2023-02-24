@@ -46,7 +46,7 @@ options(mc.cores = parallel::detectCores())
 ### Get data frame 
 
 ```{r, warning = FALSE, fig.height=8, fig.width=6}
-df <- readRDS("../Intermediate/DF_Performance.rds") %>% 
+df <- readRDS("Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random,
          weeks = num_uniweeks,
@@ -61,7 +61,7 @@ df <- readRDS("../Intermediate/DF_Performance.rds") %>%
          raw_locs_std = (raw_locs - mean(raw_locs))/sd(raw_locs),
          hours = locations*2) %>% 
   dplyr::select(group,id,prop,freq,total_points,overlap,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, raw_locs_std, raw_locs, type, hours, tau_low, tau, tau_high)
-```
+../```
 
 Take a look at the data and get initial idea using box plots.
 
@@ -214,7 +214,7 @@ p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
 Summary stats
 ```{r}
 # summary stats
-point_interval(m_type_pred$.epred_prop[m_type_pred$type=="clumped"])
+point_interval(m_type_pred$.epred_prop[m_type_pred$type=="concentrated"])
 point_interval(m_type_pred$.epred_prop[m_type_pred$type=="spread"])
 ```
 
