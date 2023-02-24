@@ -1086,7 +1086,7 @@ file.name <- paste0("regime_plot",
                                 format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
 
 ggsave(here::here("Figures", file.name),
-       plot = full_data_plot,
+       plot = regime_plots,
        width = 3000,
        height = 2600,
        units = "px")
