@@ -983,12 +983,14 @@ add_global_label <- function(pwobj, Xlab = NULL, Ylab = NULL, Xgap = 0.03, Ygap 
 Create subplots and plot
 
 ```{r}
+
+# make custom color palettes
 greens <- colorRampPalette(brewer.pal(8, "Greens"))(20)[6:20]
 oranges <- colorRampPalette(brewer.pal(8, "Oranges"))(20)[6:20]
 blues <- colorRampPalette(brewer.pal(8, "Blues"))(20)[6:20]
 purples <- colorRampPalette(brewer.pal(8, "Purples"))(20)[6:20]
-reds <- colorRampPalette(brewer.pal(8, "Reds"))(20)[6:20]
-browns <- colorRampPalette(hcl.colors(8, "BrwnYl"))(20)[6:20]
+reds <- rev(colorRampPalette(hcl.colors(8, "Reds 3"))(30)[10:21]) # reverse order so fade is consistent with brewer.pal
+browns <- rev(colorRampPalette(hcl.colors(8, "BrwnYl"))(20)[4:16])
 ```
 
 
