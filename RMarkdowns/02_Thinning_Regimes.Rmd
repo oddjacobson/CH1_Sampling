@@ -1,0 +1,157 @@
+---
+title: "Thin Sampling Regimes"
+author: "Odd Jacobson"
+date: "2022-12-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document shows how I thinned 6 high-quality segments of tracking data from 5 different capuchin groups to emulate 60 sampling regimes. 30 regimes remain roughly continuous (hereafter "clumped") while the other 30 are thinned randomly with gaps in sampling (hereafter "spread).
+
+Load packages
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ctmm)
+library(sf)
+library(ctmmweb)
+library(lubridate)
+library(sp)
+library(patchwork)
+library(RColorBrewer)
+```
+
+```{r}
+# read in data frame and transform into sf object
+df <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) 
+```
+
+
+## Thin data sets and calculate home ranges
+
+High-quality samples are taken from a 12-year dataset from 11 social groups.
+Samples are filtered from this dataset and converted into telemetry objects to work with the ctmm package.
+
+After I thin each group I estimate home ranges from the emulated regimes using a batch analysis in the ctmm framework.
+
+Note: code chunk for thinning regimes and calculating regimes are not evaluated in document to save time rendering. Results were saved and then read back into document.
+
+### AA Group
+```{r, eval=FALSE}
+
+AA <- df %>% 
+  filter(group == "AA")
+
+## first object is the high-quality subset
+aa.comp <- AA %>% 
+  mutate(individual.local.identifier = "all",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# the rest are thinned within high-quality subset
+
+## starting with clumped regimes 
+aa.c30 <- AA %>% 
+  filter(week(timestamp) %in% c(1:6),
+         date(timestamp) < date("2014-02-09")) %>% # 30 unique days
+  mutate(individual.local.identifier = "C1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa.c20 <- AA %>% 
+  filter(week(timestamp) %in% c(5:8)) %>% # 21 unique days
+  mutate(individual.local.identifier = "C2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa.c10 <- AA %>% 
+  filter(week(timestamp) %in% c(2:3),
+         date(timestamp) < date("2014-01-18")) %>% # 10 unique days
+  mutate(individual.local.identifier = "C3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa.c6 <- AA %>% 
+  filter(date(timestamp) > date("2014-02-15")) %>% # 6unique days
+  mutate(individual.local.identifier = "C4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa.c3 <- AA %>% 
+  filter(week(timestamp) == 5,
+         date(timestamp) < date("2014-02-04")) %>% # 3 unique days
+  mutate(individual.local.identifier = "C5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# filtering random days - evenly spread regimes
+
+# get available days
+aa_days <- unique(date(a1$timestamp))
+
+set.seed(84) # IMPORTANT: use set.seed for reproducibility in spread samples!
+aa.s30 <- AA %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa_days, size = 30))) %>% 
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(89) # allows from reproducibility in random samples
+aa.s20 <- AA %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 25))) %>% # 22 unique days, says 23 but 1 in sample doesn't match data, use set.seed
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(683)
+aa.s10 <- AA %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 14))) %>% # 10 unique days, same as above, use set.seed
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(510)
+aa.s6 <- AA %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 8))) %>% # 6 unique days
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(43375) # allows from reproducibility in random samples
+aa.s3 <- AA %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa_days, size = 3))) %>% 
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# combine into list
+AA_ctmm <- list(aa.comp,aa.c30,aa.c20,aa.c10,aa.c6,aa.c3,aa.s30,aa.s20,aa.s10,aa.s6,aa.s3)
+
+# rename list elements
+#names(AA) <- c("all", "C1", "C2", "C3","C4", "C5", "R1", "R2", "R3", "R4", "R5")
+names(AA_ctmm) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+AA_ctmm %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("AA Group") + 
+  #scale_fill_manual(values = greens) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank()) 
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFa <- FITSa <- AKDEa <- list()
+
+for(i in 1:length(AA)){
+  SVFa[[i]] <- variogram(AA[[i]])
+  GUESS <- ctmm.guess(AA[[i]],interactive=FALSE, variogram = SVFa[[i]])
+  FITSa[[i]] <- ctmm.select(AA[[i]],GUESS,trace=2)
+  AKDEa[[i]] <- akde(AA[[i]],FITSa[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
+}
+
+# give names same as data
+names(AKDEa) <- names(FITSa) <- names(SVFa) <- names(AA)
+
+```

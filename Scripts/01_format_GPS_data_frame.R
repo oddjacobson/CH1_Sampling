@@ -61,22 +61,25 @@ f1 <- read_rds("Data/30min_trkpts_formatted") %>%
   arrange(timestamp) %>% 
   dplyr::select(group, individual.local.identifier, timestamp, location.long, location.lat)
 
-# combine into one dataframe
+# combine into sf dataframe to save as shapefile
 df <- rbind(a1,r1,c1,aa1,s1,f1) %>% 
   st_as_sf(crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0",
            coords = c("location.long", "location.lat"))
 
+# save as shapefile
+st_write(df, "Data/CH1_GPS_data.shp")
+
+# combine as ctmm formatted dataframe
+df_ctmm <- rbind(a1,r1,c1,aa1,s1,f1)
+
 # Save table and clean up
-write.csv(df,
+write.csv(df_ctmm,
           here::here("Data/CH1_GPS_data.csv"),
           na = "",
           row.names = FALSE)
 
-# save as shapefile
-st_write(df, "Data/CH1_GPS_data.shp")
-
 # save as RDS
-saveRDS(df, "Data/CH1_GPS_data.rds" )
+saveRDS(df_ctmm, "Data/CH1_GPS_data.rds" )
 
 
 ## make map of data -----------
