@@ -341,7 +341,7 @@ c5 <- read_rds("Data/30min_trkpts_formatted") %>%
   filter(year=="2017",
          individual.local.identifier=="CE_wet",
          month(timestamp) == 7,
-         date(timestamp) < date("2017-07-08")) %>%  # 10 unique days
+         date(timestamp) < date("2017-07-08")) %>%  # 6 days
   mutate(individual.local.identifier = "C4") %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
