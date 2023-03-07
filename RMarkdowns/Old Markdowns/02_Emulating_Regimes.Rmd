@@ -1,0 +1,1225 @@
+---
+title: "Emulating Sampling Regimes"
+author: "Odd Jacobson"
+date: "2022-12-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document shows how I thinned 6 high-quality segments of tracking data from 5 different capuchin groups to emulate 60 sampling regimes. 30 regimes remain roughly continuous (hereafter "clumped") while the other 30 are thinned randomly with gaps in sampling (hereafter "spread).
+
+Load packages
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ctmm)
+library(sf)
+library(ctmmweb)
+library(lubridate)
+library(sp)
+library(patchwork)
+library(RColorBrewer)
+```
+
+
+## Thin data sets and calculate home ranges
+
+High-quality samples are taken from a 12-year dataset from 11 social groups.
+Samples are filtered from this dataset and converted into telemetry objects to work with the ctmm package.
+
+After I thin each group I estimate home ranges from the emulated regimes using a batch analysis in the ctmm framework.
+
+Note: code chunk for thinning regimes and calculating regimes are not evaluated in document to save time rendering. Results were saved and then read back into document.
+
+### AA Group
+```{r, eval=FALSE}
+
+## first object is the high-quality subset
+a1 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% # 43 unique days
+  mutate(individual.local.identifier = "all",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# the rest are thinned within high-quality subset
+
+## starting with clumped regimes 
+a2 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2),
+         week(timestamp) %in% c(1:6),
+         date(timestamp) < date("2014-02-09")) %>% # 30 unique days
+  mutate(individual.local.identifier = "C1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a3 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2),
+         week(timestamp) %in% c(5:8)) %>% # 21 unique days
+  mutate(individual.local.identifier = "C2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a4 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2),
+         week(timestamp) %in% c(2:3),
+         date(timestamp) < date("2014-01-18")) %>% # 10 unique days
+  mutate(individual.local.identifier = "C3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a5 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2),
+         date(timestamp) > date("2014-02-15")) %>% # 6unique days
+  mutate(individual.local.identifier = "C4") %>% # 6 unique days
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a6 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2),
+         week(timestamp) == 5,
+         date(timestamp) < date("2014-02-04")) %>% # 3 unique days
+  mutate(individual.local.identifier = "C5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# filtering random days - evenly spread regimes
+
+# get available days
+aa_days <- unique(date(a1$timestamp))
+
+set.seed(84) # IMPORTANT: use set.seed for reproducibility in spread samples!
+a7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa_days, size = 30))) %>% 
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(89) # allows from reproducibility in random samples
+a8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 25))) %>% # 22 unique days, says 23 but 1 in sample doesn't match data, use set.seed
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(683)
+a9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 14))) %>% # 10 unique days, same as above, use set.seed
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(510)
+a10 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 8))) %>% # 6 unique days
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(43375) # allows from reproducibility in random samples
+a11 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2014",
+         individual.local.identifier=="AA_dry",
+         month(timestamp) %in% c(1,2)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa_days, size = 3))) %>% 
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# combine into list
+AA <- list(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)
+
+# rename list elements
+#names(AA) <- c("all", "C1", "C2", "C3","C4", "C5", "R1", "R2", "R3", "R4", "R5")
+names(AA) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFa <- FITSa <- AKDEa <- list()
+
+for(i in 1:length(AA)){
+  SVFa[[i]] <- variogram(AA[[i]])
+  GUESS <- ctmm.guess(AA[[i]],interactive=FALSE, variogram = SVFa[[i]])
+  FITSa[[i]] <- ctmm.select(AA[[i]],GUESS,trace=2)
+  AKDEa[[i]] <- akde(AA[[i]],FITSa[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
+}
+
+# give names same as data
+names(AKDEa) <- names(FITSa) <- names(SVFa) <- names(AA)
+
+```
+
+### RR Group 
+
+```{r, eval=FALSE}
+
+# high-quality sample
+r1 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>%  # 39 unique days
+  mutate(individual.local.identifier = "all") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# clumped regimes
+r2 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5),
+         week(timestamp) %in% c(15:21),
+         date(timestamp) > date("2010-04-12")) %>%  # 30 unique days
+  mutate(individual.local.identifier = "C1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+r3 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5),
+         week(timestamp) %in% c(13:16)) %>%  # 18 unique days
+  mutate(individual.local.identifier = "C2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+r4 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5),
+         week(timestamp) %in% c(18:19)) %>%  # 10 unique days
+  mutate(individual.local.identifier = "C3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+r5 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5),
+         week(timestamp) == 16) %>%  # 7 unique days
+  mutate(individual.local.identifier = "C4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+r6 <-  read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5),
+         week(timestamp) == 14,
+         date(timestamp) < date("2010-04-05")) %>%  # 3 unique days
+  mutate(individual.local.identifier = "C5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# Randomly evenly spread regimes
+
+#get available days
+rr_days <- unique(date(r1$timestamp))
+
+set.seed(233)
+r7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(rr_days, 30))) %>% # 30 unique days
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(111)
+r8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(rr_days, 20))) %>% 
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(23)
+r9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2010-04-01'), as.Date('2010-05-21'), by="day"), 13))) %>% # 10 unique days, same as above, use set.seed
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(900)
+r10 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2010-04-01'), as.Date('2010-05-21'), by="day"), 10))) %>% # 7 unique days
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(853)
+r11 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="RR_dry",
+         month(timestamp) %in% c(4,5)) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(rr_days, 4))) %>% 
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# to determine unique days in regimes
+unique(date(r11$timestamp)) %>% length()
+
+# combine into list
+RR <- list(r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11)
+
+# rename list elements
+#names(RR) <- c("all", "C1", "C2", "C3","C4", "C5", "R1", "R2", "R3", "R4", "R5")
+names(RR) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFr <- FITSr <- AKDEr <- list()
+
+for(i in 1:length(RR)){
+  SVFr[[i]] <- variogram(RR[[i]])
+  GUESS <- ctmm.guess(RR[[i]],interactive=FALSE, variogram = SVFr[[i]])
+  FITSr[[i]] <- ctmm.select(RR[[i]],GUESS,trace=2)
+  AKDEr[[i]] <- akde(RR[[i]],FITSr[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
+}
+
+names(AKDEr) <- names(FITSr) <- names(SVFr) <- names(RR)
+```
+
+### CE Group
+
+```{r, eval=FALSE}
+
+# high-quality sample
+c1 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7,8,9)) %>% 
+  mutate(individual.local.identifier = "all") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
+
+## Clumped regimes
+c2 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         week(timestamp) %in% c(28:37),
+         date(timestamp) > date("2017-07-13")) %>% # 30 unique days
+  mutate(individual.local.identifier = "C1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+c3 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) == 7) %>% # 19 unique days
+  mutate(individual.local.identifier = "C2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+c4 <- read_rds("Data/30min_trkpts_formatted") %>%
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) == 8,
+         date(timestamp) < date("2017-08-18")) %>% 
+  mutate(individual.local.identifier = "C3") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+c5 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) == 7,
+         date(timestamp) < date("2017-07-08")) %>%  # 6 days
+  mutate(individual.local.identifier = "C4") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+
+c6 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7,8,9),
+         week(timestamp) == 37) %>% # 3 unique days
+  mutate(individual.local.identifier = "C5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+## Randomly sampled regimes
+
+#get available dates
+ce_dates <- unique(date(c1$timestamp))
+
+set.seed(212)
+c7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7:9)) %>%
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(ce_dates, 30))) %>% 
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(29)
+c8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7:9)) %>%
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 35))) %>% # 20 days -- remember there are gaps in total data so sample does not match, thats why 35
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(236)
+c9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7:9)) %>%
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 20))) %>% # 11 days
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
+
+set.seed(56)
+c10 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7:9)) %>%
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 9))) %>% # 7 days
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(8976)
+c11 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2017",
+         individual.local.identifier=="CE_wet",
+         month(timestamp) %in% c(7:9)) %>%
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(ce_dates, 3))) %>% 
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# to determine unique days in regimes
+unique(date(c4$timestamp)) %>% length()
+
+# combine into list
+CE <- list(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11)
+
+# rename list elements
+names(CE) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFc <- FITSc <- AKDEc <- list()
+
+for(i in 1:length(CE)){
+  SVFc[[i]] <- variogram(CE[[i]])
+  GUESS <- ctmm.guess(CE[[i]],interactive=FALSE, variogram = SVFc[[i]])
+  FITSc[[i]] <- ctmm.select(CE[[i]],GUESS,trace=2)
+  AKDEc[[i]] <- akde(CE[[i]],FITSc[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) # weights offset irregularity, grid argument aligns the grids so overlap function will work
+}
+
+names(AKDEc) <- names(FITSc) <- names(SVFc) <- names(CE)
+```
+
+### AA2 group (AA from a different time period)
+
+```{r, eval=FALSE}
+a1 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% # 42 unique days
+  mutate(individual.local.identifier = "all") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+## clumped regimes
+a2 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31"),
+         week(timestamp) %in% c(44:50),
+         date(timestamp) < date("2013-12-11")) %>% # 30 unique days
+  mutate(individual.local.identifier = "C1") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a3 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31"),
+         week(timestamp) %in% c(48,49,50,51),
+         date(timestamp) > date("2013-12-02")) %>% # 20 unique days
+  mutate(individual.local.identifier = "C2") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a4 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31"),
+         week(timestamp) %in% c(46,47)) %>% # 9 unique days
+  mutate(individual.local.identifier = "C3") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a5 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31"),
+         week(timestamp) == 45,
+         date(timestamp) < date("2013-11-11")) %>% # 6 unique days
+  mutate(individual.local.identifier = "C4") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+a6 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31"),
+         week(timestamp) == 47,
+         date(timestamp) < date("2013-11-22")) %>% # 3 unique days
+  mutate(individual.local.identifier = "C5") %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# filtering random days - evenly spread regimes
+
+# get available dates
+aa2_days <- unique(date(a1$timestamp))
+
+set.seed(815) # allows from reproducibility in random samples
+a7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa2_days, 30))) %>% # 30 days
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+
+set.seed(240) # allows from reproducibility in random samples
+a8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 25))) %>% # 20 days
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(3)
+a9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 13))) %>% # 11 days
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(109)
+a10 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 8))) %>% # 7 days
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(309) # allows from reproducibility in random samples
+a11 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2013",
+         individual.local.identifier=="AA_wet",
+         month(timestamp) %in% c(11,12),
+         date(timestamp) < date("2013-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(aa2_days, 3))) %>% # 30 days
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# to determine unique days in regimes
+unique(date(a11$timestamp)) %>% length()
+unique(week(a1$timestamp))
+
+# combine into list
+AA2 <- list(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)
+
+# rename list elements
+names(AA2) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFa2 <- FITSa2 <- AKDEa2 <- list()
+
+for(i in 1:length(AA2)){
+  SVFa2[[i]] <- variogram(AA2[[i]])
+  GUESS <- ctmm.guess(AA2[[i]],interactive=FALSE, variogram = SVFa2[[i]])
+  FITSa2[[i]] <- ctmm.select(AA2[[i]],GUESS,trace=2)
+  AKDEa2[[i]] <- akde(AA2[[i]],FITSa2[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
+}
+
+# give names same as data
+names(AKDEa2) <- names(FITSa2) <- names(SVFa2) <- names(AA2)
+```
+
+### SP Group
+
+```{r, eval=FALSE}
+
+# first is high-quality sample
+s1 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% # 48 unique days
+  mutate(individual.local.identifier = "all",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# emulating clumped regimes
+s2 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31"),
+         week(timestamp) %in% c(37:46),
+         date(timestamp) > date("2010-09-13")) %>% # 30 unique days
+  mutate(individual.local.identifier = "C1",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+s3 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31"),
+         week(timestamp) %in% c(45:50),
+         date(timestamp) > date("2010-11-05")) %>% # 20 unique days
+  mutate(individual.local.identifier = "C2",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+s4 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31"),
+         week(timestamp) %in% c(40,41,42,43),
+         date(timestamp) > date("2010-10-09")) %>% # 10 unique days
+  mutate(individual.local.identifier = "C3",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+s5 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31"),
+         week(timestamp) %in% c(37,38),
+         date(timestamp) < date("2010-09-23")) %>% # 6 unique days
+  mutate(individual.local.identifier = "C4",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+s6 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31"),
+         week(timestamp) == 47,
+         date(timestamp) > date("2010-11-20")) %>% # 6 unique days
+  mutate(individual.local.identifier = "C5",
+         date = date(timestamp)) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# emulating spread regimes
+
+# get available dates from total sample
+sp_dates <- unique(date(s1$timestamp))
+
+# filtering random days - spread regimes
+set.seed(21) # allows from reproducibility in random samples
+s7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(sp_dates, size = 30))) %>% # 30 days from available dates
+  mutate(individual.local.identifier = "S1") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(2109) # allows from reproducibility in random samples
+s8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(sp_dates, size = 20))) %>% # 20 days from available dates
+  mutate(individual.local.identifier = "S2") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(444) # allows from reproducibility in random samples
+s9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(sp_dates, size = 10))) %>% # 10 days from available dates
+  mutate(individual.local.identifier = "S3") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(852) # allows from reproducibility in random samples
+s10 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(sp_dates, size = 6))) %>% # 6 days from available dates
+  mutate(individual.local.identifier = "S4") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+set.seed(703) # allows from reproducibility in random samples
+s11 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  filter(year=="2010",
+         individual.local.identifier=="SP_wet",
+         date(timestamp) < date("2010-12-31")) %>% 
+  mutate(date = date(timestamp)) %>% 
+  filter(date %in% c(sample(sp_dates, size = 3))) %>% # 3 days from available dates
+  mutate(individual.local.identifier = "S5") %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# combine into list
+SP <- list(s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11)
+
+# rename list elements
+names(SP) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFs <- FITSs <- AKDEs <- list()
+
+for(i in 1:length(SP)){
+  SVFs[[i]] <- variogram(SP[[i]])
+  GUESS <- ctmm.guess(SP[[i]],interactive=FALSE, variogram = SVFs[[i]])
+  FITSs[[i]] <- ctmm.select(SP[[i]],GUESS,trace=2)
+  AKDEs[[i]] <- akde(SP[[i]],FITSs[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) # weights offset irregularity, grid argument aligns the grids so overlap function will work
+}
+
+names(AKDEs) <- names(FITSs) <- names(SVFs) <- names(SP)
+```
+
+### FL Group
+
+```{r, eval=FALSE}
+
+# high-quality sample
+f1 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02")) %>% # 64 unique days
+  mutate(individual.local.identifier = "all",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# clumped regimes
+f2 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         week(timestamp) %in% c(45:51)) %>% # 28 unique days
+  mutate(individual.local.identifier = "C1",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+f3 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         week(timestamp) %in% c(1,2,3,4),
+         date(timestamp) < date("2014-01-24")) %>% # 20 unique days
+  mutate(individual.local.identifier = "C2",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+f4 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         week(timestamp) %in% c(49,50,51),
+         date(timestamp) < date("2013-12-14")) %>%
+  mutate(individual.local.identifier = "C3",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+f5 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         week(timestamp) %in% c(45,46),
+         date(timestamp) < date("2013-11-17")) %>% # 6 unique days
+  mutate(individual.local.identifier = "C4",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+f6 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         week(timestamp) == 7,
+         date(timestamp) < date("2014-02-16")) %>% # 3 unique days
+  mutate(individual.local.identifier = "C5",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# random regimes --
+
+# get fl available dates
+fl_dates <- unique(date(f1$timestamp))
+
+set.seed(389)
+f7 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         date(timestamp) %in% c(sample(fl_dates, size = 30))) %>% # 30 days from available dates
+  mutate(individual.local.identifier = "R1",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+set.seed(710)
+f8 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         date(timestamp) %in% c(sample(fl_dates, size = 20))) %>% # 20 days from available dates
+  mutate(individual.local.identifier = "R2",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+set.seed(656)
+f9 <- read_rds("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>% 
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         date(timestamp) %in% c(sample(fl_dates, size = 10))) %>% # 10 days from available dates
+  mutate(individual.local.identifier = "R3",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+set.seed(3449)
+f10 <- read_rds("Data/30min_trkpts_formatted") %>%
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>%
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         date(timestamp) %in% c(sample(fl_dates, size = 6))) %>% # 6 days from available dates
+  mutate(individual.local.identifier = "R4",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+set.seed(5993)
+f11 <- read_rds("Data/30min_trkpts_formatted") %>%
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         season_year = str_c(season,year, sep = "_")) %>%
+  filter(season_year %in% c("wet_2013", "dry_2014"),
+         group=="FL",
+         month(timestamp) %in% c(11,12,1,2),
+         date(timestamp) > date("2013-11-02"),
+         date(timestamp) %in% c(sample(fl_dates, size = 3))) %>% # 3 days from available dates
+  mutate(individual.local.identifier = "R5",
+         date = date(timestamp)) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+
+# combine into list
+FL <- list(f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11)
+
+# rename list elements
+names(FL) <- c("all", "C1", "C2", "C3","C4", "C5", "S1", "S2", "S3", "S4", "S5")
+
+## BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
+SVFf <- FITSf <- AKDEf <- list()
+
+for(i in 1:length(FL)){
+  SVFf[[i]] <- variogram(FL[[i]])
+  GUESS <- ctmm.guess(FL[[i]],interactive=FALSE, variogram = SVFf[[i]])
+  FITSf[[i]] <- ctmm.select(FL[[i]],GUESS,trace=2)
+  AKDEf[[i]] <- akde(FL[[i]],FITSf[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) # weights offset irregularity, grid argument aligns the grids so overlap function will work
+}
+
+names(AKDEf) <- names(FITSf) <- names(SVFf) <- names(FL)
+```
+
+Save everything
+```{r, eval=FALSE}
+
+# save DATA, AKDEs and FITs
+saveRDS(FITSa, "Intermediate/FITS_aa.rds")
+saveRDS(FITSc, "Intermediate/FITS_ce.rds")
+saveRDS(FITSr, "Intermediate/FITS_rr.rds")
+saveRDS(FITSa2, "Intermediate/FITS_aa2.rds")
+saveRDS(FITSs, "Intermediate/FITS_sp.rds")
+saveRDS(FITSf, "Intermediate/FITS_fl.rds")
+saveRDS(AKDEa, "Intermediate/AKDE_aa.rds")
+saveRDS(AKDEc, "Intermediate/AKDE_ce.rds")
+saveRDS(AKDEr, "Intermediate/AKDE_rr.rds")
+saveRDS(AKDEa2, "Intermediate/AKDE_aa2.rds")
+saveRDS(AKDEs, "Intermediate/AKDE_sp.rds")
+saveRDS(AKDEf, "Intermediate/AKDE_fl.rds")
+saveRDS(AA, "Intermediate/DATA_aa.rds")
+saveRDS(CE, "Intermediate/DATA_ce.rds")
+saveRDS(RR, "Intermediate/DATA_rr.rds")
+saveRDS(AA2, "Intermediate/DATA_aa2.rds")
+saveRDS(SP, "Intermediate/DATA_sp.rds")
+saveRDS(FL, "Intermediate/DATA_fl.rds")
+
+```
+
+### Read data in 
+
+```{r}
+AA <- readRDS("Intermediate/DATA_aa.rds")
+CE <- readRDS("Intermediate/DATA_ce.rds")
+RR <- readRDS("Intermediate/DATA_rr.rds")
+AA2 <- readRDS("Intermediate/DATA_aa2.rds")
+SP <- readRDS("Intermediate/DATA_sp.rds")
+FL <- readRDS("Intermediate/DATA_fl.rds")
+```
+
+### Temporal Plot
+
+Function to get global axes
+```{r}
+## function to get global axes
+add_global_label <- function(pwobj, Xlab = NULL, Ylab = NULL, Xgap = 0.03, Ygap = 0.03, ...) {
+  ylabgrob <- patchwork::plot_spacer()
+  if (!is.null(Ylab)) {
+    ylabgrob <- ggplot() +
+      geom_text(aes(x = .5, y = .5), label = Ylab, angle = 90, ...) +
+      theme_void()
+  }
+  if (!is.null(Xlab)) {
+    xlabgrob <- ggplot() +
+      geom_text(aes(x = .5, y = .5), label = Xlab, ...) +
+      theme_void()
+  }
+  if (!is.null(Ylab) & is.null(Xlab)) {
+    return((ylabgrob + patchworkGrob(pwobj)) + 
+             patchwork::plot_layout(widths = 100 * c(Ygap, 1 - Ygap)))
+  }
+  if (is.null(Ylab) & !is.null(Xlab)) {
+    return((ylabgrob + pwobj) + 
+             (xlabgrob) +
+             patchwork::plot_layout(heights = 100 * c(1 - Xgap, Xgap),
+                                    widths = c(0, 100),
+                                    design = "
+                                   AB
+                                   CC
+                                   "
+             ))
+  }
+  if (!is.null(Ylab) & !is.null(Xlab)) {
+    return((ylabgrob + pwobj) + 
+             (xlabgrob) +
+             patchwork::plot_layout(heights = 100 * c(1 - Xgap, Xgap),
+                                    widths = 100 * c(Ygap, 1 - Ygap),
+                                    design = "
+                                   AB
+                                   CC
+                                   "
+             ))
+  }
+  return(pwobj)
+}
+```
+
+Create subplots and plot
+
+```{r}
+
+# make custom color palettes
+greens <- colorRampPalette(brewer.pal(8, "Greens"))(20)[6:20]
+oranges <- colorRampPalette(brewer.pal(8, "Oranges"))(20)[6:20]
+blues <- colorRampPalette(brewer.pal(8, "Blues"))(20)[6:20]
+purples <- colorRampPalette(brewer.pal(8, "Purples"))(20)[6:20]
+reds <- rev(colorRampPalette(hcl.colors(8, "Reds 3"))(30)[10:21]) # reverse order so fade is consistent with brewer.pal
+browns <- rev(colorRampPalette(hcl.colors(8, "BrwnYl"))(20)[4:16])
+```
+
+
+```{r, message=FALSE}
+p1 <- AA %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("AA Group") + 
+  scale_fill_manual(values = greens) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank()) 
+
+p2 <- CE %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("CE Group") + 
+ scale_fill_manual(values = oranges) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank())
+
+p3 <- RR %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("RR Group") + 
+  scale_fill_manual(values = blues) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank())
+
+p4 <- AA2 %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("AA2 Group") + 
+  scale_fill_manual(values = purples) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank())
+
+p5 <- SP %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("SP Group") + 
+  scale_fill_manual(values = reds) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank())
+
+p6 <- FL %>% 
+  collect() %>%  
+  purrr::pluck("data_dt") %>% 
+  plot_time() + 
+  theme_bw() +
+  ggtitle("FL Group") + 
+  scale_fill_manual(values = browns) +
+  scale_y_continuous(breaks=c(0,25,50)) +
+  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+        legend.position = "none",
+        axis.text = element_text(size = 8),
+        axis.title = element_blank())
+```
+
+
+```{r, fig.height=12, fig.width=10}
+regime_plots <- ((p1 + p2 + p3 + p4 + p5 + p6) + plot_layout(ncol = 3)) %>% 
+  add_global_label(Ylab = "Data Count",
+                   Xlab = "Time",
+                   size = 5)
+```
+
+```{r, include=FALSE}
+# Save plot
+file.name <- paste0("regime_plot",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name),
+       plot = regime_plots,
+       width = 3000,
+       height = 2600,
+       units = "px")
+```
+
+Plot showing how much tracking data was collected from 2009-2020 per group. 13 hours signifying a full day of data collection.
+
+```{r, message=FALSE}
+
+# read in data saved from above formatting
+data <- readRDS("../Data/30min_trkpts_formatted") %>%  # read in full dataset at 30min sampling rate
+  mutate(group = str_sub(individual.local.identifier, 1,2),
+         id = str_c(group,"_",year,"_",season))
+
+# summarize number of observations per date per group
+d_sum <- data %>% 
+  mutate(date = date(timestamp)) %>% 
+  group_by(date, group) %>% 
+  summarise(n = length(timestamp))
+```
+
+```{r, fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+
+# get full segments to get time intervals
+AA_full <- AA[[1]] %>% as_tibble()
+CE_full <- CE[[1]] %>% as_tibble()
+RR_full <- RR[[1]] %>% as_tibble()
+AA2_full <- AA2[[1]] %>% as_tibble()
+FL_full <- FL[[1]] %>% as_tibble()
+SP_full <- SP[[1]] %>% as_tibble()
+
+
+# plot
+full_data_plot <- d_sum %>% 
+  ggplot(aes(x = date, y = n/26)) +
+  geom_hline(aes(yintercept = 0), color = "black") +
+  geom_hline(aes(yintercept = 1), color = "gray70", lty = 3) +
+  geom_segment(aes(xend = date, yend = 0), alpha = 0.5) + 
+  geom_rect(data = subset(d_sum, group == "AA"),
+            size = 1.3,
+            fill = NA, colour = "#009E73", 
+            xmin = min(as.Date((AA_full$timestamp))), xmax = max(as.Date((AA_full$timestamp))),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "AA"),
+             aes(x = max(as.Date((AA_full$timestamp))) + 100,
+                 y = 0.5),
+             fill = "#009E73",
+             label = "AA") +
+  geom_rect(data = subset(d_sum, group == "CE"),
+            size = 1.3,
+            fill = NA, colour = "#E69F00",
+            xmin = min(as.Date((CE_full$timestamp))), xmax = max(as.Date((CE_full$timestamp))),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "CE"),
+             aes(x = max(as.Date((CE_full$timestamp))) + 100,
+                 y = 0.5),
+             fill = "#E69F00",
+             label = "CE") +
+  geom_rect(data = subset(d_sum, group == "RR"),
+            size = 1.3,
+            fill = NA, colour = "#56B4E9",
+            xmin = min(as.Date((RR_full$timestamp))), xmax = max(as.Date((RR_full$timestamp))),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "RR"),
+             aes(x = max(as.Date((RR_full$timestamp))) + 100,
+                 y = 0.5),
+             fill = "#56B4E9",
+             label = "RR") +
+  geom_rect(data = subset(d_sum, group == "AA"),
+            size = 1.3,
+            fill = NA, colour = "#AA4499",
+            xmin = min(as.Date((AA2_full$timestamp))), xmax = max(as.Date((AA2_full$timestamp)) - 3),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "AA"),
+             aes(x = max(as.Date((AA2_full$timestamp))) - 170,
+                 y = 0.5),
+             fill = "#AA4499",
+             label = "AA2") +
+  geom_rect(data = subset(d_sum, group == "FL"),
+            size = 1.3,
+            fill = NA, colour = "#997700",
+            xmin = min(as.Date((FL_full$timestamp))), xmax = max(as.Date((FL_full$timestamp))),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "FL"),
+             aes(x = max(as.Date((FL_full$timestamp))) + 100,
+                 y = 0.5),
+             fill = "#997700",
+             label = "FL") +
+  geom_rect(data = subset(d_sum, group == "SP"),
+            size = 1.3,
+            fill = NA, colour = "#D55E00",
+            xmin = min(as.Date((SP_full$timestamp))), xmax = max(as.Date((SP_full$timestamp))),
+            ymin = 0,ymax = 1,
+            show.legend = FALSE) +
+  geom_label(data = subset(d_sum, group == "SP"),
+             aes(x = max(as.Date((SP_full$timestamp))) + 100,
+                 y = 0.5),
+             fill = "#D55E00",
+             label = "SP") +
+  theme_bw() +
+  theme(panel.border = element_blank(),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        axis.text.y = element_text(size = 7),
+        legend.position = "none",
+        plot.title = element_text(hjust = 0.5)) +
+  #scale_color_manual(values = safe_colorblind_palette) +
+  scale_y_continuous(limits = c(0,1), breaks = 1,  labels = "13h") +
+  scale_x_date(breaks = scales::date_breaks("1 years"), labels = scales::date_format("%Y")) + 
+  #guides(colour = guide_legend(override.aes = list(size=10))) +
+  labs(x = "Date", y = "") +
+  theme(axis.text.y = element_text(size = 12)) +
+  #ggtitle("Observation Periods") +
+  facet_grid(group ~ ., drop = TRUE)  
+```
+
+```{r, include=FALSE}
+# Save plot
+file.name <- paste0("Data_plot_regime_boxed",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name),
+       plot = full_data_plot,
+       width = 3000,
+       height = 2600,
+       units = "px")
+```
