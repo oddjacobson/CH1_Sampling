@@ -1,0 +1,1237 @@
+---
+title: "Appendix 1: Variogram Inspection and HR Performance Maps"
+author: "Odd Jacobson"
+date: "2023-01-26"
+output:
+  rmarkdown::pdf_document:
+    fig_caption: yes        
+    includes:  
+      in_header: preamble-latex.txt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document plots the HR estimates of all the emulated sampling regimes over the data from the complete segments.
+
+The plots show the 95% UD estimates with 95% CIs using the data from the different sampling regimes. 
+Each plot shows the total locations from the complete, but the green points are the ones that were selected in the regimes, and the pink points are the data that were thinned out.
+
+```{r, message=FALSE, warning=FALSE, include = FALSE, eval = FALSE}
+library(tidyverse)
+library(ctmm)
+library(ctmmweb)
+library(sf)
+library(lubridate)
+library(janitor)
+library(ggmap)
+```
+
+### AA Group
+
+#### Variograms
+
+Here we plot the variograms for the complete segment and every sampling regime. On each plot includes the mean and confidence intervals of the movement model fitted to the empirical variogram of each sampling regime. These are used as visualization tools to see if the data was sufficient to show range residency. 
+
+```{r, include=FALSE, eval=FALSE}
+aa_svf <- readRDS("Intermediate/SVF_aa.rds") # variograms
+aa_fit <- readRDS("Intermediate/FITS_aa.rds") # model fits
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/AA_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(aa_svf, aa_fit, 
+           model_color = "#009E73", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(aa_svf))
+dev.off()
+
+```
+
+```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps which show the mean HR boundary and 95% confidence intervals. The points indicate the recorded locations. Green points are the locations kept in each sampling regime, and the pink points are the removed locations.
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get boundaries and points and change to sf object
+
+## first change everything to sf objects
+
+# data
+aa_data_sf <- readRDS("Intermediate/DATA_aa.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+aa_akde_sf <- readRDS("Intermediate/AKDE_aa.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+aa_akde_CI <- readRDS("Intermediate/AKDE_aa.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+aa_all_data <- readRDS("Intermediate/DATA_aa.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(aa_data_sf$id)
+
+# make list
+aa_data_list <- aa_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(aa_data_list) <- ids
+
+# make empty list to be filled
+aa_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  aa_thinned_data[[i]] <- anti_join(as.data.frame(aa_all_data), aa_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+aa_thinned_data <- as.data.frame(do.call(rbind, aa_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+
+# get colors
+colors <- c("missing points" = "#de4968", "used points" = "#40bd72")
+shape <- c("missing points" = 1, "used points" = 16)
+size <- c("missing points" = 0.8, "used points" = 1.2)
+labels <- c("missing points", "used points")
+
+# plot
+p1 <- ggplot() +
+  geom_sf(data = aa_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = aa_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.6) +
+  geom_sf(data = aa_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("AA_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p1,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_03_07_212749.jpg")
+```
+
+### RR Group
+
+#### Variograms
+
+Below are the variograms for RR group. Similarily to CE group, there appears to be a shift after about a month.
+
+```{r, include=FALSE, eval=FALSE}
+rr_svf <- readRDS("Intermediate/SVF_rr.rds") # variograms
+rr_fit <- readRDS("Intermediate/FITS_rr.rds") # model fits
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/RR_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(rr_svf, rr_fit, 
+           model_color = "#56B4E9", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(rr_svf))
+dev.off()
+```
+
+```{r, echo=FALSE, fig.cap="RR Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps for RR group. Spread sampling regimes did not seem to perform better than concentrated for this group. There is not much of a difference based on the maps alone. 
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get boundaries and points and change to sf object
+
+## first change everything to sf objects
+
+# data
+rr_data_sf <- readRDS("Intermediate/DATA_rr.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+rr_akde_sf <- readRDS("Intermediate/AKDE_rr.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+rr_akde_CI <- readRDS("Intermediate/AKDE_rr.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+rr_all_data <- readRDS("Intermediate/DATA_rr.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(rr_data_sf$id)
+
+# make list
+rr_data_list <- rr_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(rr_data_list) <- ids
+
+# make empty list to be filled
+rr_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  rr_thinned_data[[i]] <- anti_join(as.data.frame(rr_all_data), rr_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+rr_thinned_data <- as.data.frame(do.call(rbind, rr_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+
+# plot
+p2 <- ggplot() +
+  geom_sf(data = rr_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = rr_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.6) +
+  geom_sf(data = rr_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = rr_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(677.000,680.000), ylim=c(1160.000, 1163.500)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("RR_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p2,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from RR sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_03_07_212625.jpg")
+```
+
+## CE Group
+
+#### Variograms
+
+Below are the variograms for CE group. Notice how in the complete segment, the empirical variogram asymptotes then jumps up to a higher asymptote. This is the result of this group shifting within their range, which is only captured if the time lag is longer than about one month.
+
+```{r, include = FALSE, eval = FALSE}
+ce_svf <- readRDS("Intermediate/SVF_ce.rds") # variograms
+ce_fit <- readRDS("Intermediate/FITS_ce.rds") # model fits
+
+png(filename = "Figures/CE_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(ce_svf, ce_fit, 
+           model_color = "#E69F00", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(ce_svf))
+dev.off()
+
+```
+
+```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps. Notice how the concentrated regimes performed very poorly because they fail to capture the shift in space-use. 
+
+```{r, include = FALSE, eval = FALSE}
+
+# Get boundaries and points and change to sf object
+## change to sf objects
+
+# data
+ce_data_sf <- readRDS("Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+ce_akde_sf <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+ce_akde_CI <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+ce_all_data <- readRDS("Intermediate/DATA_ce.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+```{r, include = FALSE, eval = FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(ce_data_sf$id)
+
+# make list
+ce_data_list <- ce_data_sf %>% 
+  #as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(ce_data_list) <- ids
+
+# make empty list to be filled
+ce_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  ce_thinned_data[[i]] <- anti_join(as.data.frame(ce_all_data), ce_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+ce_thinned_data <- as.data.frame(do.call(rbind, ce_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+
+# plot
+p3 <- ggplot() +
+  geom_sf(data = ce_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = ce_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.8) +
+  geom_sf(data = ce_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = ce_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.700,677.500), ylim=c(1162.000, 1164.100)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("CE_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p3,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_performance_plots_2023_03_07_212401.jpg")
+```
+
+### AA2 Group
+
+#### Variograms
+
+Below are the variograms for AA2 group, which is just another complete segment selected from AA group. 
+
+```{r, include=FALSE, eval=FALSE}
+aa2_svf <- readRDS("Intermediate/SVF_aa2.rds") # variograms
+aa2_fit <- readRDS("Intermediate/FITS_aa2.rds") # model fits
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/AA2_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(aa2_svf, aa2_fit, 
+           model_color = "#AA4499", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(aa2_svf))
+dev.off()
+
+```
+
+```{r, echo=FALSE, fig.cap="AA2 Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps for AA2 group.
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get boundaries and points and change to sf object
+
+## first change everything to sf objects
+
+# data
+aa2_data_sf <- readRDS("Intermediate/DATA_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+aa2_akde_sf <- readRDS("Intermediate/AKDE_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+aa2_akde_CI <- readRDS("Intermediate/AKDE_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+aa2_all_data <- readRDS("Intermediate/DATA_aa2.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(aa2_data_sf$id)
+
+# make list
+aa2_data_list <- aa2_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(aa2_data_list) <- ids
+
+# make empty list to be filled
+aa2_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  aa2_thinned_data[[i]] <- anti_join(as.data.frame(aa2_all_data), aa2_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+aa2_thinned_data <- as.data.frame(do.call(rbind, aa2_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+# plot
+p4 <- ggplot() +
+  geom_sf(data = aa2_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = aa2_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.4) +
+  geom_sf(data = aa2_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = aa2_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("AA2_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p4,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA2 sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_performance_plots_2023_03_07_212216.jpg")
+```
+
+### SP Group
+
+#### Variograms
+
+Below are the variograms for SP group. These tend to be messier than the other groups because this segment has a longer duration and therefore the time lag bins are more frequent. The messiness does not cause an issue; the main point of these is to see if there is an asymptote. 
+
+```{r, include=FALSE, eval=FALSE}
+sp_svf <- readRDS("Intermediate/SVF_sp.rds") # variograms
+sp_fit <- readRDS("Intermediate/FITS_sp.rds") # model fits
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/SP_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(sp_svf, sp_fit, 
+           model_color = "#D55E00", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(sp_svf))
+dev.off()
+```
+
+```{r, echo=FALSE, fig.cap="SP Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps for SP group.
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get boundaries and points and change to sf object
+
+## first change everything to sf objects
+
+# data
+sp_data_sf <- readRDS("Intermediate/DATA_sp.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+sp_akde_sf <- readRDS("Intermediate/AKDE_sp.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+sp_akde_CI <- readRDS("Intermediate/AKDE_sp.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+sp_all_data <- readRDS("Intermediate/DATA_sp.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(sp_data_sf$id)
+
+# make list
+sp_data_list <- sp_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(sp_data_list) <- ids
+
+# make empty list to be filled
+sp_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  sp_thinned_data[[i]] <- anti_join(as.data.frame(sp_all_data), sp_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+sp_thinned_data <- as.data.frame(do.call(rbind, sp_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+# plot
+p5 <- ggplot() +
+  geom_sf(data = sp_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = sp_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.4) +
+  geom_sf(data = sp_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = sp_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.250,679.000), ylim=c(1159.500, 1162.500)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("SP_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p5,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from SP sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_performance_plots_2023_03_07_213913.jpg")
+```
+
+### FL Group
+
+#### Variograms
+
+Below are the variograms for FL group. 
+
+```{r, include=FALSE, eval=FALSE}
+fl_svf <- readRDS("Intermediate/SVF_fl.rds") # variograms
+fl_fit <- readRDS("Intermediate/FITS_fl.rds") # model fits
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/FL_SVF.png", width = 3000, height = 2000, units = "px")
+plot_vario(fl_svf, fl_fit, 
+           model_color = "#997700", 
+           cex = 2, fraction = 1, 
+           relative_zoom = T,
+           columns = 4,
+           title_vec = names(fl_svf))
+dev.off()
+```
+
+```{r, echo=FALSE, fig.cap="FL Variograms and Model Fits", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_SVF.png")
+```
+
+#### HR Performance Maps
+
+Below are the HR performance maps for FL group.
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get boundaries and points and change to sf object
+
+## first change everything to sf objects
+
+# data
+fl_data_sf <- readRDS("Intermediate/DATA_fl.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  dplyr::select(id, geometry) %>% 
+  filter(!id == "all") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR mean boundary
+fl_akde_sf <- readRDS("Intermediate/AKDE_fl.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# HR confidence boundaries
+fl_akde_CI <- readRDS("Intermediate/AKDE_fl.rds") %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  mutate(name = gsub("R", "S", name),
+         id = gsub( " .*$", "", name ),
+         id = ifelse(id == "C1", "C30", 
+                     ifelse(id == "C2", "C20",
+                            ifelse(id == "C3", "C10",
+                                   ifelse(id == "C4", "C6",
+                                          ifelse(id == "C5", "C3",
+                                                 ifelse(id == "S1", "S30",
+                                                        ifelse(id == "S2", "S20",
+                                                               ifelse(id == "S3", "S10",
+                                                                      ifelse(id == "S4", "S6",
+                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  filter(!str_detect(row.names(.), "est"),
+         !id == "all") %>%
+  dplyr::select(id, geometry) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# get all points
+fl_all_data <- readRDS("Intermediate/DATA_fl.rds") %>% 
+  purrr::map(ctmm::as.sf) %>% 
+  reduce(rbind) %>% 
+  mutate(id = gsub("R", "S", identity)) %>% 
+  dplyr::select(id, geometry) %>% 
+  filter(id == "all")  %>% 
+  dplyr::select(-id) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+
+# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+
+## getting all thinned data
+# get unique ids
+ids <- unique(fl_data_sf$id)
+
+# make list
+fl_data_list <- fl_data_sf %>% 
+  as.data.frame() %>% 
+  group_split(id)
+
+# change names of list
+names(fl_data_list) <- ids
+
+# make empty list to be filled
+fl_thinned_data <- list()
+
+# run loop over to get data that was thinned from each regime
+for (i in ids){
+  fl_thinned_data[[i]] <- anti_join(as.data.frame(fl_all_data), fl_data_list[[i]], by = "geometry")
+}
+
+# bind into data frame and make sf object
+fl_thinned_data <- as.data.frame(do.call(rbind, fl_thinned_data)) %>%
+  rownames_to_column("id") %>% 
+  mutate(id = sub("\\..*", "", id)) %>% 
+  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+```
+
+```{r, include = FALSE, eval = FALSE}
+# plot
+p6 <- ggplot() +
+  geom_sf(data = fl_data_sf, 
+          aes(color = "used points", shape = "used points", size = "used points"),
+          inherit.aes = FALSE, alpha = 1.5) +
+  geom_sf(data = fl_thinned_data, 
+          aes(color = "missing points", shape = "missing points", size = "missing points"),
+          inherit.aes = FALSE, alpha = 0.4) +
+  geom_sf(data = fl_akde_CI, 
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+  geom_sf(data = fl_akde_sf,
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, size = 0.8) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.500,680.000), ylim=c(1163.000, 1167.000)) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  scale_shape_manual(values = shape, labels = labels, name = "") +
+  scale_size_manual(values = size, labels = labels, name = "") +
+  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  guides(color=guide_legend(override.aes=list(size = 8)))+
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        #axis.text.x = element_text(angle=45, hjust = 1),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 15)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2) 
+```
+
+```{r, include=FALSE, eval = FALSE}
+# Save plot
+file.name.performance <- paste0("FL_performance_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.performance),
+       plot = p6,
+       width = 3400,
+       height = 2000,
+       units = "px")
+```
+
+```{r, echo=FALSE, fig.cap="Home Range Estimates from FL sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_performance_plots_2023_03_07_214422.jpg")
+```

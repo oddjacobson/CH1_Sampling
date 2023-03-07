@@ -976,11 +976,14 @@ The following code generates the variograms, movement models, and akde home rang
 ```{r, eval = FALSE}
 # BATCH ANALYSIS - VARIOGRAM, MODEL FITTING, AKDE ##
 
+# change width of lag bin to make variograms less messy
+dt <- c(1,10) %#% "hour"
+
 # AA..............
 SVFa <- FITSa <- AKDEa <- list() # create empty lists to be filled
 
 for(i in 1:length(AA_ctmm)){
-  SVFa[[i]] <- variogram(AA_ctmm[[i]])
+  SVFa[[i]] <- variogram(AA_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(AA_ctmm[[i]],interactive=FALSE, variogram = SVFa[[i]]) #use variogram to get initial parameters
   FITSa[[i]] <- ctmm.select(AA_ctmm[[i]],GUESS,trace=2) # fit movement models
   AKDEa[[i]] <- akde(AA_ctmm[[i]],FITSa[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) # hr estimation
@@ -995,7 +998,7 @@ names(AKDEa) <- names(FITSa) <- names(SVFa) <- names(AA_ctmm)
 SVFr <- FITSr <- AKDEr <- list()
 
 for(i in 1:length(RR_ctmm)){
-  SVFr[[i]] <- variogram(RR_ctmm[[i]])
+  SVFr[[i]] <- variogram(RR_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(RR_ctmm[[i]],interactive=FALSE, variogram = SVFr[[i]])
   FITSr[[i]] <- ctmm.select(RR_ctmm[[i]],GUESS,trace=2)
   AKDEr[[i]] <- akde(RR_ctmm[[i]],FITSr[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
@@ -1007,7 +1010,7 @@ names(AKDEr) <- names(FITSr) <- names(SVFr) <- names(RR_ctmm)
 SVFc <- FITSc <- AKDEc <- list()
 
 for(i in 1:length(CE_ctmm)){
-  SVFc[[i]] <- variogram(CE_ctmm[[i]])
+  SVFc[[i]] <- variogram(CE_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(CE_ctmm[[i]],interactive=FALSE, variogram = SVFc[[i]])
   FITSc[[i]] <- ctmm.select(CE_ctmm[[i]],GUESS,trace=2)
   AKDEc[[i]] <- akde(CE_ctmm[[i]],FITSc[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
@@ -1019,7 +1022,7 @@ names(AKDEc) <- names(FITSc) <- names(SVFc) <- names(CE_ctmm)
 SVFa2 <- FITSa2 <- AKDEa2 <- list()
 
 for(i in 1:length(AA2_ctmm)){
-  SVFa2[[i]] <- variogram(AA2_ctmm[[i]])
+  SVFa2[[i]] <- variogram(AA2_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(AA2_ctmm[[i]],interactive=FALSE, variogram = SVFa2[[i]])
   FITSa2[[i]] <- ctmm.select(AA2_ctmm[[i]],GUESS,trace=2)
   AKDEa2[[i]] <- akde(AA2_ctmm[[i]],FITSa2[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
@@ -1055,7 +1058,13 @@ names(AKDEf) <- names(FITSf) <- names(SVFf) <- names(FL_ctmm)
 
 ```{r, include = FALSE, eval=FALSE}
 
-# save DATA, AKDEs and FITs
+# save 
+saveRDS(SVFa, "Intermediate/SVF_aa.rds")
+saveRDS(SVFc, "Intermediate/SVF_ce.rds")
+saveRDS(SVFr, "Intermediate/SVF_rr.rds")
+saveRDS(SVFa2, "Intermediate/SVF_aa2.rds")
+saveRDS(SVFs, "Intermediate/SVF_sp.rds")
+saveRDS(SVFf, "Intermediate/SVF_fl.rds")
 saveRDS(FITSa, "Intermediate/FITS_aa.rds")
 saveRDS(FITSc, "Intermediate/FITS_ce.rds")
 saveRDS(FITSr, "Intermediate/FITS_rr.rds")
