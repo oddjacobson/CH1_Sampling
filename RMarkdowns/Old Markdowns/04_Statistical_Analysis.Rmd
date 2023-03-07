@@ -61,7 +61,7 @@ df <- readRDS("Intermediate/DF_Performance.rds") %>%
          raw_locs_std = (raw_locs - mean(raw_locs))/sd(raw_locs),
          hours = locations*2) %>% 
   dplyr::select(group,id,prop,freq,total_points,overlap,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, raw_locs_std, raw_locs, type, hours, tau_low, tau, tau_high)
-../```
+```
 
 Take a look at the data and get initial idea using box plots.
 

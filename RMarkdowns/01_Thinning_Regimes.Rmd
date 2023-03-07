@@ -1035,7 +1035,7 @@ names(AKDEa2) <- names(FITSa2) <- names(SVFa2) <- names(AA2_ctmm)
 SVFs <- FITSs <- AKDEs <- list()
 
 for(i in 1:length(SP_ctmm)){
-  SVFs[[i]] <- variogram(SP_ctmm[[i]])
+  SVFs[[i]] <- variogram(SP_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(SP_ctmm[[i]],interactive=FALSE, variogram = SVFs[[i]])
   FITSs[[i]] <- ctmm.select(SP_ctmm[[i]],GUESS,trace=2)
   AKDEs[[i]] <- akde(SP_ctmm[[i]],FITSs[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
@@ -1047,7 +1047,7 @@ names(AKDEs) <- names(FITSs) <- names(SVFs) <- names(SP_ctmm)
 SVFf <- FITSf <- AKDEf <- list()
 
 for(i in 1:length(FL_ctmm)){
-  SVFf[[i]] <- variogram(FL_ctmm[[i]])
+  SVFf[[i]] <- variogram(FL_ctmm[[i]], dt = dt)
   GUESS <- ctmm.guess(FL_ctmm[[i]],interactive=FALSE, variogram = SVFf[[i]])
   FITSf[[i]] <- ctmm.select(FL_ctmm[[i]],GUESS,trace=2)
   AKDEf[[i]] <- akde(FL_ctmm[[i]],FITSf[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
