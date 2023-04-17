@@ -1,5 +1,5 @@
 ---
-title: "Appendix 1: Variogram Inspection and HR Performance Maps"
+title: "Appendix 2: Home Range Analysis from the 60 Sampling Regimes"
 author: "Odd Jacobson"
 date: "2023-01-26"
 output:
@@ -13,7 +13,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This document plots the HR estimates of all the emulated sampling regimes over the data from the complete segments.
+This document details 1) variogram inspection, 2) movement model selection, and 3) home range outputs for the 60 different sampling regimes. 
+
+plots the HR estimates of all the emulated sampling regimes over the data from the complete segments.
 
 The plots show the 95% UD estimates with 95% CIs using the data from the different sampling regimes. 
 Each plot shows the total locations from the complete, but the green points are the ones that were selected in the regimes, and the pink points are the data that were thinned out.

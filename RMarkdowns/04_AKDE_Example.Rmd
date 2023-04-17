@@ -1,8 +1,13 @@
 ---
-title: "Appendix 3: Home Range Estimation using AKDE Walkthrough"
+title: "Appendix 1: Home Range Estimation using Autocorrelated Kernel Density Estimation"
 author: "Odd Jacobson"
 date: "2023-01-26"
-output: pdf_document
+output: 
+  pdf_document:
+    fig_caption: yes
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
+bibliography: references.json
 header-includes:
   \usepackage{fvextra}
   \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
@@ -10,47 +15,84 @@ header-includes:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
-The purpose of this appendix is to detail the steps to estimating a home range using the *ctmm* package. Accounting for autocorrelation is important so that we avoid biases in our results. However, it requires some additional steps compared to most convenetional estimators, which is why we describe the process and provide an example workflow. We strongly recommend going through the *ctmm* vignettes (see https://ctmm-initiative.github.io/ctmm/index.html) for a detailed review.
+The purpose of this appendix is to detail the steps to estimating a home range (HR) using the *ctmm* package. This document can be used as a practical guide, where one can use our practice dataset or one's own data to walk-through the analytical process.
 
-Generating a home range estimate from movement data using continuous-time movement modelling involves three main steps: 1) Variogram inspection, 2) Model fitting and selection, and 3) AKDE calculations. This process can either be done using the *ctmm* package in the R environment for statistical computing, or using the *ctmmweb* point-and-click graphical user interface (Calabrese et al., 2021), which streamlines the modelling steps, helping users conduct home range analysis without the need to know the R programming language. We describe the former method below:
+Accounting for autocorrelation is important so that we avoid biases in our results. However, it requires some additional steps compared to most conventional estimators, which is why we describe the process and provide an example workflow. We strongly recommend going through the *ctmm* vignettes (see https://ctmm-initiative.github.io/ctmm/index.html) for a more detailed review.
 
-The first step is to load the necessary packages and read in the data
+Generating a home range estimate from movement data using continuous-time movement modelling involves three main steps: 1) variogram inspection, 2) model fitting and selection, and 3) Autocorrelated Kernel Density Estimation (AKDE). This process can either be done using the *ctmm* package in the R environment for statistical computing [@rcoreteam22], or using the *ctmmweb* point-and-click graphical user interface [@calabrese_etal21], which streamlines the modelling steps, helping users conduct home range analysis without the need to know the R programming language. We describe the process using R below:
+
+The first step is to load the necessary packages and prepare the data
 
 ```{r, eval = FALSE}
 library(tidyverse)
 library(ctmm)
-library(sf)
-library(ctmmweb)
 ```
 
-Data must have the same format as the following data frmae. These are the same format required by *Movebank*. Either you can manually edit the dataframe and then convert to a telemetry object, or put data on Movebank and read data in from there, which will automatically put the data in the correct format. Once data is in correct format, convert to telemetry object and specify the UTM projection.
+## Prepare Data
+
+The data must have the same format as the following dataframe with the same column names. These are the same format required by *Movebank*. Either you can manually edit the dataframe and then convert to a telemetry object, or put data on Movebank and import from there, which will automatically put the data in the correct format. 
+
+Note: `individual.local.identifier` (ILI) specifies the unique ID (usually individual or group) that you want the home range estimate for. At the bottom of the document, we also include some example code of how to do all of the below analysis in a single step for a list of several ILIs.  
+
+In our study, the ILI indicated the different sampling regimes. "All" was the ILI for the complete segments. For this walkthrough, we will use the data from the complete segment of SP group, and change the ILI to the group.
 
 ```{r, eval=FALSE}
 # read in data frame 
+# filtering data from SP group, and taking the data from the complete segment - denoted as "all"
 DATA <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) %>% 
-  filter(group == "SP" & individual.local.identifier == "all") %>%  #select the complete segment from SP group (could pick any)
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") # change to telemetry object for ctmm
+  filter(group == "SP" & individual.local.identifier == "all") %>%   #select the complete segment from SP group (could pick any group)
+  dplyr::select(-individual.local.identifier) %>% # remove prev ILI column
+  rename(individual.local.identifier = group) # make group the new ILI
+```
 
-plot(DATA, main = "Data")
+```{r, include=FALSE, eval = FALSE}
+saveRDS(DATA, "Intermediate/DATA_practice.rds")
+```
+
+```{r, include=FALSE}
+DATA <- readRDS("../Intermediate/DATA_practice.rds")
+```
+
+The data should should look like this (these are the first six rows):
+```{r, message = FALSE}
+head(DATA)
+```
+
+Once the dataframe is in correct format, convert it to a telemetry object and specify the UTM projection:
+
+```{r, eval=FALSE}
+# convert data to telemetry object
+DATA <- DATA %>% 
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
+
+Plot the data:
+
+```{r, eval=FALSE}
+# plot location data
+plot(DATA, main = "Location Data")
 ```
 
 ```{r, include=FALSE, eval=FALSE}
 png(filename = "Figures/Example_Data.png", width = 600, height = 600, units = "px")
-plot(DATA, main = "Data")
+plot(DATA, main = "Location Data")
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width = '75%'}
+
+```{r, echo=FALSE, fig.cap="Location data from the complete segment of SP group", fig.align='center', out.width = '75%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_Data.png")
 ```
 
-## Varigram Inspection
 
-Variograms plot the semi-variance (y-axis), which is a measure of the average squared displacement, as a function of the time-lag that separates any pair of observed locations (Diggle and Ribeiro 2007; Silva et al. 2021). Variograms play two major roles in the *ctmm* workflow: first, they provide an unbiased visual diagnostic to assess the autocorrelation structure present in the data, and second, they inform whether the data shows evidence of range residency (Silva et al. 2021). Asymptoting curves in a variogram indicate range residency. Where the asymptote aligns with the x-axis is a measure of the necessary time-lag between positions to assume independence (Silva et al. 2021). It is also a rough estimate of the home range crossing time (Christen H. Fleming and Calabrese 2017). If the curve continues to increase without flattening, the animals are either non-resident (i.e. home range drift or migration), or not tracked long enough to capture the full extent of their home ranges (Calabrese, Fleming, and Gurarie 2016). 
+## Variogram Inspection
 
-We used the *variogram* and *plot* functions to visually assess the empirical variogram curves. Once we confirmed that all complete segments represented range-restricted movement, we proceeded with model fitting and selection. It is necessary to confirm range-residency before conducting home range estimation because, while ctmm is capable of fitting both range-resident (the default) and endlessly diffusing movement models, only the first set are appropriate for home range estimation.
+Variograms plot the semi-variance (y-axis), which is a measure of the average squared displacement, as a function of the time-lag that separates any pair of observed locations [@diggle_ribeiro07; @silva_etal21]. Variograms play two major roles in the *ctmm* workflow: first, they provide an unbiased visual diagnostic to assess the autocorrelation structure present in the data, and second, they inform whether the data shows evidence of range residency [@silva_etal21]. Asymptoting curves in a variogram indicate range residency. Where the asymptote aligns with the x-axis is a measure of the necessary time-lag between positions to assume independence [@silva_etal21]. It is also a rough estimate of the home range crossing time [@fleming_calabrese17]. If the curve continues to increase without flattening, the animals are either non-resident (i.e. home range drift or migration), or not tracked long enough to capture the full extent of their home ranges [@calabrese_etal16]. 
+
+We used the *variogram* and *plot* functions to visually assess the empirical variogram curves. Once the data are confirmed to represented range-restricted movement, we can proceeded with model fitting and selection. It is necessary to confirm range-residency before conducting home range estimation because, while ctmm is capable of fitting both range-resident (the default) and endlessly diffusing movement models, only the first set are appropriate for home range estimation.
 
 ```{r, eval=FALSE}
 SVF <- variogram(DATA, dt = c(1,10) %#% "hour") # dt argument changes the width of the time-lag bins (makes variogram smoother)
@@ -63,27 +105,58 @@ plot(SVF, main = "Empirical Variogram")
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width = '75%'}
+
+```{r, echo=FALSE,fig.cap="Empirical variogram from the complete segment of SP group", fig.align='center', out.width = '75%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_SVF.png")
 ```
 
-This is a plot of the empricial varigram. The line asymptotes at approximately five days. This is roughly the average home range crossing time. This is also approximately how far apart locations need to be in time for them to be independent (https://ctmm-initiative.github.io/ctmm/articles/variogram.html). 
+
+This is a plot of the empricial varigram. The line asymptotes at approximately three days. This is roughly the average home range crossing time. This is also approximately how far apart locations need to be in time for them to be independent (https://ctmm-initiative.github.io/ctmm/articles/variogram.html). 
 
 ## Movement Model Selection
 
-Again, see the above link for a detailed review. We will only briefly cover the necessary steps, but to fully understand the model selection process it is important to through the *ctmm* vignette. 
+Model fitting also involves two steps: first the `ctmm.guess` function uses the shape of the empirical variogram to generate starting values required for the non-linear models, and second, the `ctmm.select` function uses the values calculated from `ctmm.guess` to fit a range of  alternative stationary (and range-restricted) movement models using Maximum Likelihood [@fleming_etal14]. Models are ranked by AICc (Akaike information criterion) allowing us to evaluate which model or models best predict the data.  This process permits identification and fit of a stationary movement model that corresponds to the observed movement behavior of the animal [@fleming_etal14]. 
 
-Model fitting also involves two steps: first the *ctmm.guess* function uses the shape of the empirical variogram to generate starting values required for the non-linear models, and second, the *ctmm.select* function uses the values calculated from *ctmm.guess* to fit a range of  alternative stationary (and range-restricted) movement models using Maximum Likelihood (C. H. Fleming et al., 2014). Models are ranked by AICc (Akaike information criterion) allowing us to evaluate which model or models best predict the data.  This process permits identification and fit of a stationary movement model that corresponds to the observed movement behavior of the animal (C. Fleming et al. 2014). 
+It is worth noting that here, stationary means that the underlying movement processes are assumed to be consistent throughout the duration of the data. Movement model parameters represent time-averaged values, which has important implications on how data should be segmented for home range analysis. If the underlying parameters change drastically within the sample—particularly the mean location—then the stationary assumption has been violated. Therefore, it is common practice to segment the data when the parameters change and estimate separate ranges. This is consistent with Burt’s original concept of the home range where, for example, he stated winter and summer ranges for migratory species should be considered separately with the travel between as transit [@burt43]. In our case, all sampling regimes were from single, stationary ranges which negated any need for further segmentation.
 
-It is worth noting that here, stationary means that the underlying movement processes are assumed to be consistent throughout the duration of the data. Movement model parameters represent time-averaged values, which has important implications on how data should be segmented for home range analysis. If the underlying parameters change drastically within the sample—particularly the mean location—then the stationary assumption has been violated. Therefore, it is common practice to segment the data when the parameters change and estimate separate ranges. This is consistent with Burt’s original concept of the home range where, for example, he stated winter and summer ranges for migratory species should be considered separately with the travel between as transit (Burt, 1943). In our case, all subsets were from single, stationary ranges which negated any need for further segmentation.
+The pool of potential movement models which involve home range behavior include:
+
+1) *Independent and Identically Distributed* (IID) -- location data has uncorrelated positions and velocities.
+
+2) *Ornstein--Uhlenbeck* (OU) -- location data has autocorrelated positions and uncorrelated velocities.
+
+3) *OU Foraging* (OUF) -- location data has autocorrelated positions and velocities [@calabrese_etal16; @fleming_etal14a; @fleming_etal14]
+
+OU and OUF can be further specified with isotropic or anisotropic versions of each. Isotropic means diffusion is equal on every extent of the home range, while anisotropic means diffusion is asymmetrical [@silva_etal21]. 
+
+Endlessly diffusing movement models (non-HR models) such as *brownian motion* (BM) or *integrated OU* (IOU) cannot be statistically compared to HR models using maximum likelihood (see `?ctmm.select`). To fit these movement models, one must manually specify them. 
 
 ```{r, eval=FALSE}
-GUESS <- ctmm.guess(DATA,interactive=FALSE, variogram = SVF)
+# get starting values for models
+GUESS <- ctmm.guess(DATA,interactive=FALSE, variogram = SVF) 
+
+# fit models and select top one, trace = 2 allows you to see progress
 FIT <- ctmm.select(DATA,GUESS,trace=2)
+```
 
-# model summary
+```{r, eval=FALSE, include=FALSE}
+saveRDS(FIT, "Intermediate/FIT_practice.rds")
+```
+
+```{r, include=FALSE}
+FIT <- readRDS("../Intermediate/FIT_practice.rds")
+```
+
+```{r, message = FALSE}
+# see model summary for top model
 summary(FIT)
+```
 
+The top model selected for our practice dataset was *OUF anisotropic*. Above is the summary information for that model. The `$DOF` specifies the effective sample sizes. The most important one for home range estimation being under `area` which indicates the number of statistically independent points (or approximately the number of home range crossings -- see Methods in the main text). 
+
+The `area (square kilometers)` slot indicates the Gaussian area, which is an estimate of spatial variance, but is not our AKDE area. `tau[position] (hours)` is the tau referenced in the main text. This is time necessary between locations for them to be independent, or approximately the home range crossing timescale. `tau[velocity] (minutes)` is the timescale necessary for the velocities to be independent. Estimates of speed (i.e. proportional to average daily travel distance) and diffusion rate are also included. 
+
+```{r, eval=FALSE}
 # plot empirical variogram with best model
 plot(SVF, CTMM = FIT, main = "Variogram and Fitted Model")
 ```
@@ -94,30 +167,168 @@ plot(SVF, CTMM = FIT, main = "Variogram and Fitted Model")
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width = '75%'}
+
+```{r, echo=FALSE, fig.cap="Top movement model fitted to the empirical variogram", fig.align='center', out.width = '75%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_SVF_model.png")
 ```
-The fitted model provide estimates and confidence intervals for several related quantities, including mean speed (km/day i.e. proportional to daily travel distance), diffusion rate, position autocorrelation timescale or the home range crossing time (tau[position] (hours)), velocity autocorrelation timescale (tau[velocity] (minutes)), and the effective sample size or number of home range crossings in the data (i.e. "$DOF area"). 
+
 
 ## AKDE Home Range Estimation
 
-The final stage is to calculate an autocorrelated kernel density home-range estimate (AKDE) using the eponymously named *akde* function (Calabrese, Fleming, and Gurarie 2016). This function takes the movement data and the corresponding fitted model and returns: a UD object corresponding to the range distribution, information on the optimal bandwidth, point estimates and confidence intervals for area, and a measure of the effective sample size of the data for home range estimation. In our case, we selected *weights = TRUE* within the *akde* function, which helps correct for irregular and missing data by down-weighting over-sampled portions of the data and up-weighting under-sampled portions (C. H. Fleming et al. 2018). This helps to offset sampling bias, but is not sufficient if large portions of the true range are missing from the sampled data.
+The final step is to calculate an autocorrelated kernel density home-range estimate (AKDE) using the eponymously named `akde` function [@calabrese_etal16]. This function takes the movement data and the corresponding fitted model and returns: a utilization distribution (UD) object corresponding to the range distribution, information on the optimal bandwidth, point estimates and confidence intervals for HR area, and a measure of the effective sample size of the data for home range estimation. For the sampling regimes in our study, we also included the `weights = TRUE` option, which helps correct for irregular and missing data by down-weighting over-sampled portions of the data and up-weighting under-sampled portions [@fleming_etal18]. This helps to offset sampling bias, but is not sufficient if large portions of the true range are missing from the sampled data.
 
 ```{r, eval=FALSE}
+
+# get UD using AKDE
 UD <- akde(DATA, FIT, weights = TRUE)
 
-# plot UD
+# plot UD over location data
 plot(DATA,UD = UD, main = "AKDE Home Range Estimate")
 ```
 
+
 ```{r, include=FALSE, eval=FALSE}
+saveRDS(UD, "Intermediate/UD_practice.rds")
+
 png(filename = "Figures/Example_AKDE.png", width = 600, height = 600, units = "px")
 plot(DATA,UD = UD, main = "AKDE Home Range Estimate")
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.align='center', out.width = '75%'}
+
+```{r, echo=FALSE, fig.cap="Home range estimate (95\\% utilization distribution) mean contour and 95\\% confidence intervals plotted over location data", fig.align='center', out.width = '75%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_AKDE.png")
 ```
+
+
+Below is the summary information:
+
+```{r, include = FALSE}
+UD <- readRDS("../Intermediate/UD_practice.rds")
+```
+
+```{r, message = FALSE}
+summary(UD)
+```
+
+The effective sample size (DOF area) is the same as from the fitted model. In this case, there was about 81 observed home range crossings in the data. The `area (square kilometers)` slot shows the estimated home range area and 95% confidence intervals.
+
+## Example of bulk calculation for several individuals or groups
+
+Below is code to demonstrate how to perform the above analysis with multiple individuals or groups in one step using a loop (may take a little while to run, ~20min).  
+
+```{r, eval = FALSE}
+
+## PREPARE DATA 
+# take only complete segments (all)
+# make group the new individual.local.identifer (ILI)
+# change to tele object
+DATA_bulk <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) %>% 
+  filter(individual.local.identifier == "all") %>% # take only complete segments
+  dplyr::select(-individual.local.identifier) %>% # remove prev ILI column
+  rename(individual.local.identifier = group) %>% # make group the new ILI
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# note: when there are multiple individual.local.identifiers, as.telemetry makes a list, with each
+# individual.local.identifier being an element in the list
+# variograms, model fits, and UDs follow the same list format
+
+# make empty lists to be filled by below loop
+UDs <- FITs <- SVFs <- list()
+
+## BULK CALCULATIONS
+# for every ili, make a variogram (SVF), get starter values (GUESS), select model (FIT), and calculate AKDE (UD)
+# grid argument in akde aligns UDs so that overlap function is possible if desired later on
+for(i in 1:length(DATA_bulk)){
+  SVFs[[i]] <- variogram(DATA_bulk[[i]])
+  GUESS <- ctmm.guess(DATA_bulk[[i]],interactive=FALSE, variogram = SVFs[[i]])
+  FITs[[i]] <- ctmm.select(DATA_bulk[[i]],GUESS,trace=2)
+  UDs[[i]] <- akde(DATA_bulk[[i]],FITs[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
+}
+
+# make names of variograms, fits, and UDs the same as data
+names(UDs) <- names(FITs) <- names(SVFs) <- names(DATA_bulk)
+```
+
+```{r, eval = FALSE, include = FALSE}
+saveRDS(SVFs, "Intermediate/SVF_bulk_practice.rds")
+saveRDS(FITs, "Intermediate/FIT_bulk_practice.rds")
+saveRDS(UDs, "Intermediate/UD_bulk_practice.rds")
+```
+
+```{r, eval = FALSE}
+
+# make color blind pallette
+colorblind_pal <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#D55E00", "#CC79A7")
+
+# plot together
+plot(UDs, col.DF=colorblind_pal)
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/Example_AKDE_bulk_together.png", width = 450, height = 600, units = "px")
+plot(UDs, col.DF=colorblind_pal)
+dev.off()
+```
+
+
+```{r, echo=FALSE, fig.cap= "Home range estimate (95\\% utilization distribution) mean contours and 95\\% confidence intervals from the six complete segments",  fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_AKDE_bulk_together.png")
+```
+
+
+```{r, eval = FALSE}
+
+# plot seperate
+par(mfrow = c(2,3))
+for(i in 1:length(UDs)){
+  plot(DATA_bulk[[i]], UDs[[i]], 
+       col = colorblind_pal[[i]], 
+       col.DF=colorblind_pal[[i]], 
+       main = names(UDs[i]))
+}
+```
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/Example_AKDE_bulk_seperate.png", width = 600, height = 500, units = "px")
+par(mfrow = c(2,3))
+for(i in 1:length(UDs)){
+  plot(DATA_bulk[[i]], UDs[[i]], 
+       col = colorblind_pal[[i]], 
+       col.DF=colorblind_pal[[i]], 
+       main = names(UDs[i]))
+}
+dev.off()
+```
+ 
+
+```{r, echo=FALSE, fig.cap = "Home range estimate (95\\% utilization distribution) contours and 95\\% confidence intervals from the six complete segments plotted separately",  fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_AKDE_bulk_seperate.png")
+```
+
+
+```{r, include = FALSE}
+UDs <- readRDS("../Intermediate/UD_bulk_practice.rds")
+```
+
+You can compare home range areas using: 
+
+```{r, eval = FALSE}
+meta(UDs, variable = "area", main = "HR areas" col = colorblind_pal)
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+png(filename = "Figures/Example_meta.png", width = 600, height = 450, units = "px")
+meta(UDs, variable = "area", main = "HR areas", col = colorblind_pal)
+dev.off()
+```
+
+
+```{r, echo=FALSE, fig.cap="Plot showing the comparison of home range area and confidence intervals for all six complete segments. The colors correspond to the same colors in the home range plots. The mean area across the six complete segments is shown in black on the bottom", fig.align='center', out.width = '75%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/Example_meta.png")
+```
+
+
 ## References
 
