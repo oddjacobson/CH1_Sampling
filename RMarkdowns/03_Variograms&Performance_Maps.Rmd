@@ -1,71 +1,129 @@
 ---
-title: "Appendix 2: Home Range Analysis from the 60 Sampling Regimes"
+title: "Appendix 2: Home Range Analysis for the 60 Sampling Regimes"
 author: "Odd Jacobson"
-date: "2023-01-26"
+date: \today
 output:
   rmarkdown::pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
     fig_caption: yes        
     includes:  
       in_header: preamble-latex.txt
+header-includes:
+  \floatplacement{figure}{H}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
-This document details 1) variogram inspection, 2) movement model selection, and 3) home range outputs for the 60 different sampling regimes. 
+### Background
 
-plots the HR estimates of all the emulated sampling regimes over the data from the complete segments.
+The purpose of this document is to show the outputs of the home range analysis from the 60 sampling regimes. This includes the: 1) variogram regressions with the fitted movement models and 2) the movement model summary information, and 3) home range estimates (See Appendix 1 for a detailed description of how home range analysis in *ctmm* works.
 
-The plots show the 95% UD estimates with 95% CIs using the data from the different sampling regimes. 
-Each plot shows the total locations from the complete, but the green points are the ones that were selected in the regimes, and the pink points are the data that were thinned out.
+As a reminder, the 60 sampling regimes were generated from portions of our longitudinal movement dataset that were of the highest quality (two or more months of consistent data with very few temporal gaps), which we call "complete segments". There are six complete segments from five groups because two of the complete segments came from the same group at different time periods (AA and AA2). How the sampling regimes were generated from the complete segments is described in the Methods section of the main text. We include the important information for every complete segment (i.e. labelled as "all") and every sampling regime. The names of the sampling regimes are labelled with (C) for concentrated or (S) for spread, followed by the number of days in the data (e.g. C10).
 
-```{r, message=FALSE, warning=FALSE, include = FALSE, eval = FALSE}
+```{r, message=FALSE, warning=FALSE, include = FALSE}
 library(tidyverse)
 library(ctmm)
 library(ctmmweb)
 library(sf)
 library(lubridate)
 library(janitor)
-library(ggmap)
+library(data.table)
 ```
 
-### AA Group
+**Note on variograms:**  These plots are used as visualization tools to see if the data was sufficient to show range residency. Generally, what we are looking for is whether the empirical variograms plateau indicating range residency. If the variograms continue to increase, then this is an immediate sign that the data is not suitable for home range estimation. With irregular data, the variograms can look quite messy, which is generally not a problem. Also, they tend to be a bit more unpredictable toward larger time-lags which also is not normally an issue. In these plots, we also include the mean and confidence intervals for the top movement model (determined by AICc) fitted to the empirical variogram. 
 
-#### Variograms
+**Note on model summaries:** For the complete segments and sampling regimes from each group, we show a table showing the name of the selected movement model, the home range crossing time and the effective sample size. Overall, the *Ornstein--Uhlenbeck Foraging* (OUF) model was always selected, meaning that the data showed autocorrelated positions and velocities (See Appendix 1 for decriptions of the possible movement models). The effective sample sizes  generally decrease with less days in the data. The effective sample sizes were generally above 10 for sampling regimes that had at least six days (e.g. C6, S6), but dropped to worrying low quantities with only 3 days (e.g. C3, S3).
 
-Here we plot the variograms for the complete segment and every sampling regime. On each plot includes the mean and confidence intervals of the movement model fitted to the empirical variogram of each sampling regime. These are used as visualization tools to see if the data was sufficient to show range residency. 
+**Note on home range plots:** These plots show the 95% UD estimates with 95% CIs of the AKDE home range estimates for the 60 sampling regimes. 
+Each plot shows the total locations from the complete, but the closed green points are the locations that were selected in the regimes, and the open pink points are the locations that were thinned out. 
 
-```{r, include=FALSE, eval=FALSE}
-aa_svf <- readRDS("Intermediate/SVF_aa.rds") # variograms
-aa_fit <- readRDS("Intermediate/FITS_aa.rds") # model fits
+### I. AA Group
+
+
+#### i. Variograms
+
+
+```{r, include=FALSE}
+aa_fit <- readRDS("../Intermediate/FITS_aa.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-png(filename = "Figures/AA_SVF.png", width = 3000, height = 2000, units = "px")
+aa_svf <- readRDS("../Intermediate/SVF_aa.rds") # read in variograms
+
+png(filename = "Figures/AA_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa_svf, aa_fit, 
            model_color = "#009E73", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(aa_svf))
 dev.off()
-
 ```
 
-```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '75%'}
+
+```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_SVF.png")
 ```
 
-#### HR Performance Maps
+#### ii. Model Summary
 
-Below are the HR performance maps which show the mean HR boundary and 95% confidence intervals. The points indicate the recorded locations. Green points are the locations kept in each sampling regime, and the pink points are the removed locations.
+
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(aa_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(aa_fit))){
+  aa_fit[[i]]@info$identity <- names(aa_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+## function to get summaries of model fits
+summarize_fits <- function(fit){
+  
+  summary <- summary(fit, units = FALSE) 
+  
+  tibble(individual.local.identifier = fit@info$identity,
+         model = summary$name,
+         hr_xing_time = (summary$CI[2,2]/3600), # convert seconds to hours
+         effective_sample_size = (summary$DOF[2]))
+  
+}
+
+# wrapper to stack area info into data frame
+make_summary_df <- function(id){
+  map_dfr(id, summarize_fits) 
+}
+
+aa_fits_summaries <- make_summary_df(aa_fit)
+
+knitr::kable(aa_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 1: Model summary information for AA group")
+```
+
+
+#### iii. HR Performance Maps
+
 
 ```{r, include=FALSE, eval=FALSE}
 
 # Get boundaries and points and change to sf object
 
 ## first change everything to sf objects
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
 
 # data
 aa_data_sf <- readRDS("Intermediate/DATA_aa.rds") %>% 
@@ -234,34 +292,62 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_03_07_212749.jpg")
 ```
 
-### RR Group
+### I. RR Group
 
-#### Variograms
+#### i. Variograms
 
 Below are the variograms for RR group. Similarily to CE group, there appears to be a shift after about a month.
 
-```{r, include=FALSE, eval=FALSE}
-rr_svf <- readRDS("Intermediate/SVF_rr.rds") # variograms
-rr_fit <- readRDS("Intermediate/FITS_rr.rds") # model fits
+```{r, include=FALSE}
+rr_fit <- readRDS("../Intermediate/FITS_rr.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-png(filename = "Figures/RR_SVF.png", width = 3000, height = 2000, units = "px")
+
+rr_svf <- readRDS("Intermediate/SVF_rr.rds") # read in variograms
+
+png(filename = "Figures/RR_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(rr_svf, rr_fit, 
            model_color = "#56B4E9", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(rr_svf))
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.cap="RR Variograms and Model Fits", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="RR Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_SVF.png")
+```
+
+#### ii. Model Summary
+
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(rr_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(rr_fit))){
+  rr_fit[[i]]@info$identity <- names(rr_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+rr_fits_summaries <- make_summary_df(rr_fit)
+
+knitr::kable(rr_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 2: Model summary information for RR group")
 ```
 
 #### HR Performance Maps
@@ -435,24 +521,27 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from RR sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from RR sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_03_07_212625.jpg")
 ```
 
-## CE Group
+## III. CE Group
 
-#### Variograms
+#### i. Variograms
 
 Below are the variograms for CE group. Notice how in the complete segment, the empirical variogram asymptotes then jumps up to a higher asymptote. This is the result of this group shifting within their range, which is only captured if the time lag is longer than about one month.
 
-```{r, include = FALSE, eval = FALSE}
-ce_svf <- readRDS("Intermediate/SVF_ce.rds") # variograms
-ce_fit <- readRDS("Intermediate/FITS_ce.rds") # model fits
+```{r, include = FALSE}
+ce_fit <- readRDS("../Intermediate/FITS_ce.rds") # read in model fits
+```
 
-png(filename = "Figures/CE_SVF.png", width = 3000, height = 2000, units = "px")
+```{r, include = FALSE, eval = FALSE}
+ce_svf <- readRDS("Intermediate/SVF_ce.rds") # read in variograms
+
+png(filename = "Figures/CE_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(ce_svf, ce_fit, 
            model_color = "#E69F00", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(ce_svf))
@@ -460,11 +549,37 @@ dev.off()
 
 ```
 
-```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_SVF.png")
 ```
 
-#### HR Performance Maps
+#### ii. Model Summary
+
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(ce_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(ce_fit))){
+  ce_fit[[i]]@info$identity <- names(ce_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+ce_fits_summaries <- make_summary_df(ce_fit)
+
+knitr::kable(ce_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 3: Model summary information for CE group")
+```
+
+#### iii. HR Performance Maps
 
 Below are the HR performance maps. Notice how the concentrated regimes performed very poorly because they fail to capture the shift in space-use. 
 
@@ -633,26 +748,27 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_performance_plots_2023_03_07_212401.jpg")
 ```
 
-### AA2 Group
+### IV. AA2 Group
 
-#### Variograms
+#### i. Variograms
 
 Below are the variograms for AA2 group, which is just another complete segment selected from AA group. 
 
-```{r, include=FALSE, eval=FALSE}
-aa2_svf <- readRDS("Intermediate/SVF_aa2.rds") # variograms
-aa2_fit <- readRDS("Intermediate/FITS_aa2.rds") # model fits
+```{r, include=FALSE}
+aa2_fit <- readRDS("../Intermediate/FITS_aa2.rds") # model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-png(filename = "Figures/AA2_SVF.png", width = 3000, height = 2000, units = "px")
+aa2_svf <- readRDS("Intermediate/SVF_aa2.rds") # read in variograms
+
+png(filename = "Figures/AA2_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa2_svf, aa2_fit, 
            model_color = "#AA4499", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(aa2_svf))
@@ -660,11 +776,37 @@ dev.off()
 
 ```
 
-```{r, echo=FALSE, fig.cap="AA2 Variograms and Model Fits", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="AA2 Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_SVF.png")
 ```
 
-#### HR Performance Maps
+#### ii. Model Summary
+
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(aa2_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(aa2_fit))){
+  aa2_fit[[i]]@info$identity <- names(aa2_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+aa2_fits_summaries <- make_summary_df(aa2_fit)
+
+knitr::kable(aa2_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 4: Model summary information for AA2 group")
+```
+
+#### iii. HR Performance Maps
 
 Below are the HR performance maps for AA2 group.
 
@@ -834,37 +976,64 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from AA2 sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from AA2 sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_performance_plots_2023_03_07_212216.jpg")
 ```
 
-### SP Group
+### V. SP Group
 
-#### Variograms
+#### i. Variograms
 
 Below are the variograms for SP group. These tend to be messier than the other groups because this segment has a longer duration and therefore the time lag bins are more frequent. The messiness does not cause an issue; the main point of these is to see if there is an asymptote. 
 
-```{r, include=FALSE, eval=FALSE}
-sp_svf <- readRDS("Intermediate/SVF_sp.rds") # variograms
-sp_fit <- readRDS("Intermediate/FITS_sp.rds") # model fits
+```{r, include=FALSE}
+sp_fit <- readRDS("../Intermediate/FITS_sp.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-png(filename = "Figures/SP_SVF.png", width = 3000, height = 2000, units = "px")
+sp_svf <- readRDS("Intermediate/SVF_sp.rds") # read in variograms
+
+png(filename = "Figures/SP_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(sp_svf, sp_fit, 
            model_color = "#D55E00", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(sp_svf))
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.cap="SP Variograms and Model Fits", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="SP Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_SVF.png")
 ```
 
-#### HR Performance Maps
+#### ii. Model Summary
+
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(sp_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(sp_fit))){
+  sp_fit[[i]]@info$identity <- names(sp_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+sp_fits_summaries <- make_summary_df(sp_fit)
+
+knitr::kable(sp_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 2: Model summary information for SP group")
+```
+
+#### iii. HR Performance Maps
 
 Below are the HR performance maps for SP group.
 
@@ -1034,39 +1203,65 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from SP sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from SP sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_performance_plots_2023_03_07_213913.jpg")
 ```
 
-### FL Group
+### VI. FL Group
 
-#### Variograms
+#### i. Variograms
 
 Below are the variograms for FL group. 
 
-```{r, include=FALSE, eval=FALSE}
-fl_svf <- readRDS("Intermediate/SVF_fl.rds") # variograms
-fl_fit <- readRDS("Intermediate/FITS_fl.rds") # model fits
+```{r, include=FALSE}
+fl_fit <- readRDS("../Intermediate/FITS_fl.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-png(filename = "Figures/FL_SVF.png", width = 3000, height = 2000, units = "px")
+fl_svf <- readRDS("Intermediate/SVF_fl.rds") # read in variograms
+
+png(filename = "Figures/FL_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(fl_svf, fl_fit, 
            model_color = "#997700", 
-           cex = 2, fraction = 1, 
+           cex = 3, fraction = 1, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(fl_svf))
 dev.off()
 ```
 
-```{r, echo=FALSE, fig.cap="FL Variograms and Model Fits", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="FL Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_SVF.png")
 ```
 
-#### HR Performance Maps
+#### ii. Model Summary
 
-Below are the HR performance maps for FL group.
+```{r, include = FALSE}
+## change names of sampling regimes (were originally named C1, C2, C3, etc.)
+## changed to indicate number of days to make more informative
+names(fl_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+
+# change identity of fits
+for (i in 1:length(names(fl_fit))){
+  fl_fit[[i]]@info$identity <- names(fl_fit)[[i]]
+}
+```
+
+
+```{r, echo = FALSE}
+
+fl_fits_summaries <- make_summary_df(fl_fit)
+
+knitr::kable(fl_fits_summaries,
+             col.names = c("individual.local.identifier",
+                           "Model Name",
+                           "HR Crossing Time (hours)",
+                           "Effective Sample Size"),
+             caption = "Table 6: Model summary information for FL group")
+```
+
+#### iii. HR Performance Maps
+
 
 ```{r, include=FALSE, eval=FALSE}
 
@@ -1234,6 +1429,6 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from FL sampling regimes plotted over data", fig.align='center', out.width = '75%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from FL sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_performance_plots_2023_03_07_214422.jpg")
 ```

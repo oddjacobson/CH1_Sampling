@@ -1,7 +1,7 @@
 ---
 title: "Appendix 1: Home Range Estimation using Autocorrelated Kernel Density Estimation"
 author: "Odd Jacobson"
-date: "2023-01-26"
+date: \today
 output: 
   pdf_document:
     fig_caption: yes
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
-The purpose of this appendix is to detail the steps to estimating a home range (HR) using the *ctmm* package. This document can be used as a practical guide, where one can use our practice dataset or one's own data to walk-through the analytical process.
+The purpose of this appendix is to detail the steps to estimating a home range (HR) using continuous-time movement modelling and the *ctmm* package. This document can be used as a practical guide, where one can use our practice dataset or one's own data to walk-through the analytical process.
 
 Accounting for autocorrelation is important so that we avoid biases in our results. However, it requires some additional steps compared to most conventional estimators, which is why we describe the process and provide an example workflow. We strongly recommend going through the *ctmm* vignettes (see https://ctmm-initiative.github.io/ctmm/index.html) for a more detailed review.
 
@@ -237,7 +237,7 @@ DATA_bulk <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) %>%
 UDs <- FITs <- SVFs <- list()
 
 ## BULK CALCULATIONS
-# for every ili, make a variogram (SVF), get starter values (GUESS), select model (FIT), and calculate AKDE (UD)
+# for every ILI, make a variogram (SVF), get starter values (GUESS), select model (FIT), and calculate AKDE (UD)
 # grid argument in akde aligns UDs so that overlap function is possible if desired later on
 for(i in 1:length(DATA_bulk)){
   SVFs[[i]] <- variogram(DATA_bulk[[i]])
