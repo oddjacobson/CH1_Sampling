@@ -1,6 +1,5 @@
 ---
 title: "Appendix 1: Home Range Estimation using Autocorrelated Kernel Density Estimation"
-author: "Odd Jacobson"
 date: \today
 output: 
   pdf_document:
@@ -18,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 ```
 
+## I. Background
+
 The purpose of this appendix is to detail the steps to estimating a home range (HR) using continuous-time movement modelling and the *ctmm* package. This document can be used as a practical guide, where one can use our practice dataset or one's own data to walk-through the analytical process.
 
 Accounting for autocorrelation is important so that we avoid biases in our results. However, it requires some additional steps compared to most conventional estimators, which is why we describe the process and provide an example workflow. We strongly recommend going through the *ctmm* vignettes (see https://ctmm-initiative.github.io/ctmm/index.html) for a more detailed review.
@@ -27,11 +28,15 @@ Generating a home range estimate from movement data using continuous-time moveme
 The first step is to load the necessary packages and prepare the data
 
 ```{r, eval = FALSE}
+# you can install ctmm from CRAN, but better to get the development version for recent updates
+devtools::install_github("ctmm-initiative/ctmm")
+
+# load packages
 library(tidyverse)
 library(ctmm)
 ```
 
-## Prepare Data
+## II. Prepare Data
 
 The data must have the same format as the following dataframe with the same column names. These are the same format required by *Movebank*. Either you can manually edit the dataframe and then convert to a telemetry object, or put data on Movebank and import from there, which will automatically put the data in the correct format. 
 
@@ -61,7 +66,7 @@ The data should should look like this (these are the first six rows):
 head(DATA)
 ```
 
-Once the dataframe is in correct format, convert it to a telemetry object and specify the UTM projection:
+Once the dataframe is in the correct format, convert it to a telemetry object and specify the UTM projection:
 
 ```{r, eval=FALSE}
 # convert data to telemetry object
@@ -88,11 +93,11 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 ```
 
 
-## Variogram Inspection
+## III. Variogram Inspection
 
-Variograms plot the semi-variance (y-axis), which is a measure of the average squared displacement, as a function of the time-lag that separates any pair of observed locations [@diggle_ribeiro07; @silva_etal21]. Variograms play two major roles in the *ctmm* workflow: first, they provide an unbiased visual diagnostic to assess the autocorrelation structure present in the data, and second, they inform whether the data shows evidence of range residency [@silva_etal21]. Asymptoting curves in a variogram indicate range residency. Where the asymptote aligns with the x-axis is a measure of the necessary time-lag between positions to assume independence [@silva_etal21]. It is also a rough estimate of the home range crossing time [@fleming_calabrese17]. If the curve continues to increase without flattening, the animals are either non-resident (i.e. home range drift or migration), or not tracked long enough to capture the full extent of their home ranges [@calabrese_etal16]. 
+Variograms plot the semi-variance (y-axis), which is a measure of the average squared displacement, as a function of the time-lag that separates any pair of observed locations [@diggle_ribeiro07; @silva_etal21]. Variograms play two major roles in the *ctmm* workflow: first, they provide an unbiased visual diagnostic to assess the autocorrelation structure present in the data, and second, they inform whether the data shows evidence of range residency [@silva_etal21]. Asymptoting curves in a variogram indicate range residency. Where the asymptote aligns with the x-axis is a measure of the necessary time-lag between positions to assume independence [@silva_etal21]. It is also a rough estimate of the home range crossing time [@fleming_calabrese17]. If the curve continues to increase without flattening, the animals are either non-resident (i.e. home range drift or migration), or not tracked long enough to capture the full extent of their home range [@calabrese_etal16]. 
 
-We used the *variogram* and *plot* functions to visually assess the empirical variogram curves. Once the data are confirmed to represented range-restricted movement, we can proceeded with model fitting and selection. It is necessary to confirm range-residency before conducting home range estimation because, while ctmm is capable of fitting both range-resident (the default) and endlessly diffusing movement models, only the first set are appropriate for home range estimation.
+Once the data are confirmed to represented range-restricted movement, we can proceeded with model fitting and selection. It is necessary to confirm range-residency before conducting home range estimation because, while ctmm is capable of fitting both range-resident (the default) and endlessly diffusing movement models, only the first set are appropriate for home range estimation.
 
 ```{r, eval=FALSE}
 SVF <- variogram(DATA, dt = c(1,10) %#% "hour") # dt argument changes the width of the time-lag bins (makes variogram smoother)
@@ -113,7 +118,7 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 This is a plot of the empricial varigram. The line asymptotes at approximately three days. This is roughly the average home range crossing time. This is also approximately how far apart locations need to be in time for them to be independent (https://ctmm-initiative.github.io/ctmm/articles/variogram.html). 
 
-## Movement Model Selection
+## IV. Movement Model Selection
 
 Model fitting also involves two steps: first the `ctmm.guess` function uses the shape of the empirical variogram to generate starting values required for the non-linear models, and second, the `ctmm.select` function uses the values calculated from `ctmm.guess` to fit a range of  alternative stationary (and range-restricted) movement models using Maximum Likelihood [@fleming_etal14]. Models are ranked by AICc (Akaike information criterion) allowing us to evaluate which model or models best predict the data.  This process permits identification and fit of a stationary movement model that corresponds to the observed movement behavior of the animal [@fleming_etal14]. 
 
@@ -173,7 +178,7 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 ```
 
 
-## AKDE Home Range Estimation
+## V. AKDE Home Range Estimation
 
 The final step is to calculate an autocorrelated kernel density home-range estimate (AKDE) using the eponymously named `akde` function [@calabrese_etal16]. This function takes the movement data and the corresponding fitted model and returns: a utilization distribution (UD) object corresponding to the range distribution, information on the optimal bandwidth, point estimates and confidence intervals for HR area, and a measure of the effective sample size of the data for home range estimation. For the sampling regimes in our study, we also included the `weights = TRUE` option, which helps correct for irregular and missing data by down-weighting over-sampled portions of the data and up-weighting under-sampled portions [@fleming_etal18]. This helps to offset sampling bias, but is not sufficient if large portions of the true range are missing from the sampled data.
 
@@ -213,7 +218,7 @@ summary(UD)
 
 The effective sample size (DOF area) is the same as from the fitted model. In this case, there was about 81 observed home range crossings in the data. The `area (square kilometers)` slot shows the estimated home range area and 95% confidence intervals.
 
-## Example of bulk calculation for several individuals or groups
+## VI. Bulk analysis for several individuals or groups
 
 Below is code to demonstrate how to perform the above analysis with multiple individuals or groups in one step using a loop (may take a little while to run, ~20min).  
 

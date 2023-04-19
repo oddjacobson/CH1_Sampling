@@ -1,18 +1,33 @@
 ---
-title: 'Appendix 2: Supplemental Statistical Analysis'
-author: "Odd Jacobson"
+title: 'Appendix 3: Varying Effects Plots and Model Posteriors'
 date: \today
 output:
   rmarkdown::pdf_document:
+    latex_engine: xelatex
+    extra_dependencies: ["float"]
     fig_caption: yes        
     includes:  
       in_header: preamble-latex.txt
+header-includes:
+  \floatplacement{figure}{H}
 ---
 
-This document shows the supplemental statistical analysis and results of our Bayesian models. The following are the figures not included in the main text. As a reminder, our models aim to predict the home range performance based on the following predictors: 1) clumped vs spread data, 2) # of locations, 3) # of unique weeks
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
+```
+
+## I. Background 
+
+This supplementary document presents additional information related to our statistical analysis. Our aim was to model the performance of home range estimation, as defined in the Methods section, based on different characteristics of the sampling regimes. To achieve this, we employed three binomial Bayesian generalized linear mixed models.
+
+The first model utilized a binary predictor variable to indicate whether the data in the sampling regimes were concentrated or spread, to predict performance. The second model used the number of locations as the predictor, while the third model used the number of unique weeks. We included an interaction between the predictors and the binary variable indicating spread or concentrated data in the last two models, and all models have varying slopes and intercepts per group.
+
+In this document, we provide varying effects plots as referred to in the main text (but not presented there), along with the posterior distributions for all three statistical models.
 
 
 ```{r, eval = FALSE, include = FALSE}
+# load packages
 library(tidyverse)
 library(bayesplot)
 library(rstanarm)
@@ -41,6 +56,7 @@ options(mc.cores = parallel::detectCores())
 ```
 
 ```{r, include = FALSE, eval = FALSE}
+# read in results from performance calculations
 df <- readRDS("Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random,
@@ -58,11 +74,10 @@ df <- readRDS("Intermediate/DF_Performance.rds") %>%
   dplyr::select(group,id,prop,freq,total_points,overlap,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, raw_locs_std, raw_locs, type, hours, tau_low, tau, tau_high)
 ```
 
-Take a look at the data and get initial idea using box plots.
 
 ```{r, eval = FALSE, include = FALSE}
-# box plot
-box_plot <- ggplot(data = df, aes(x = type, y = prop)) +
+# Take a look at the data and get initial idea using box plots.
+ggplot(data = df, aes(x = type, y = prop)) +
   geom_half_point(data = df, aes(color = type),
                   transformation = position_quasirandom(width = 0.1),
                   side = "l", size = 3, alpha = 0.5) +
@@ -80,32 +95,16 @@ box_plot <- ggplot(data = df, aes(x = type, y = prop)) +
         plot.title = element_text(size = 20))
 ```
 
-```{r, eval = FALSE, include = FALSE}
+## II. Model 1: HR Performance ~ Binary Predictor (spread vs. concentrated)
 
-# Save plot
-file.name.model.preds <- paste0("box_plot_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+```{r, eval=FALSE, include = FALSE}
 
-ggsave(here::here("Figures", file.name.model.preds),
-       plot = box_plot,
-       width = 3500,
-       height = 3000,
-       units = "px")
+## Statistic Models ------------------------------
 
-```
-
-```{r, echo=FALSE, fig.cap="Descriptive Boxplot of Performance. Comparing Concentrated versus Spread Sampling Regimes", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/box_plot_2023_03_07_233719.jpg")
-```
-
-## Statistic Models
-
-We used binomial models with the number of locations that fall within the UD estimate indicating "successes", and the total points indicate the number of trials.
+# We used binomial models with the number of locations that fall within the UD estimate indicating "successes", and the total points indicate the number of trials.
 
 ### Concentrated vs Spread Binary predictor
 
-Set priors and model
-```{r, eval=FALSE, include = FALSE}
 # set priors
 priors_prop <- c(
   prior(normal(0,1.2), class = "b"),
@@ -133,59 +132,36 @@ m_type <- brm(freq | trials(total_points) ~ type + (type|group),
 saveRDS(m_type, "Intermediate/Models/model_type.rds")
 ```
 
-Posterior validation check
 
 ```{r, include=FALSE, eval=FALSE}
 # read in model
 m_type <- readRDS("Intermediate/Models/model_type.rds")
 
-m1_ppcheck <- pp_check(m_type, ndraws = 50)
-m1_mcmc <- mcmc_plot(m_type, type = "intervals")
+# Posterior validation check
+pp_check(m_type, ndraws = 50)
+
+# posteriors for model parameters
+m1 <- mcmc_plot(m_type, type = "areas")
 ```
 
 ```{r, eval = FALSE, include = FALSE}
 
-# Save plot
-file.name <- paste0("m_type_ppcheck_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
-
-ggsave(here::here("Figures", file.name),
-       bg = "white",
-       plot = m1_ppcheck,
-       width = 3500,
-       height = 3000,
-       units = "px")
-
-```
-
-```{r, echo=FALSE, fig.cap="Posterior validation check for first model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_ppcheck_2023_03_07_234652.jpg")
-```
-
-Posterior distributions for model parameters
-
-```{r, eval = FALSE, include = FALSE}
-
-# Save plot
+# Save mcmc plot
 file.name <- paste0("m_type_mcmc_plot_",
                                 format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
 
 ggsave(here::here("Figures", file.name),
        bg = "white",
-       plot = m1_mcmc,
+       plot = m1,
        width = 3500,
        height = 3000,
        units = "px")
 
 ```
 
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in first model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_mcmc_plot_2023_03_07_234745.jpg")
-```
-
-Plot posterior predictions for group effect (varying slopes and intercepts)
 
 ```{r, eval = FALSE, include = FALSE}
+## Plot posterior predictions for group effect (varying slopes and intercepts)
 # get posterior predictions
 m_type_pred <- m_type %>% 
   epred_draws(newdata = tibble(type = df$type,
@@ -212,7 +188,8 @@ p1_groups <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   theme(axis.text = element_text(size = 15),
         axis.title.y = element_text(size = 20),
         axis.title.x = element_blank(),
-        plot.title = element_text(size = 20)) +
+        plot.title = element_text(size = 20),
+        strip.text = element_text(size = 20)) +
   facet_wrap(~group)
 ```
 
@@ -230,8 +207,14 @@ ggsave(here::here("Figures", file.name),
 
 ```
 
-```{r, echo=FALSE, fig.cap="Group effects for first model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_pred_groups2023_03_07_235512.jpg")
+
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread." , fig.align='center' , out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_pred_groups2023_04_19_164443.jpg")
+```
+
+
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_mcmc_plot_2023_04_19_162753.jpg")
 ```
 
 
@@ -264,9 +247,10 @@ point_interval(m_type_pred$.epred_prop[m_type_pred$type=="concentrated"])
 point_interval(m_type_pred$.epred_prop[m_type_pred$type=="spread"])
 ```
 
-### Number of locations as predictor
+## III. Model 2: HR Performance ~ Number of Locations 
 
 ```{r, eval=FALSE, include = FALSE}
+### Number of locations as predictor --------------------
 # set priors
 reg_priors <- c(
   prior(normal(0,1), class = "b"),
@@ -293,37 +277,17 @@ m_locs <- brm(
 saveRDS(m_locs, "Intermediate/Models/model_locations.rds")
 ```
 
-### Posterior validation check
 ```{r, include = FALSE, eval = FALSE}
 
 # read in model
 m_locs <- readRDS("Intermediate/Models/model_locations.rds")
 
 # posterior validation
-m2_ppcheck <- pp_check(m_locs, ndraws = 50) 
-m2_mcmc <- mcmc_plot(m_locs, type = 'intervals') 
+pp_check(m_locs, ndraws = 50) 
+
+# posterior distributions for model parameters
+m2 <- mcmc_plot(m_locs, type = 'areas') 
 ```
-
-```{r, eval = FALSE, include = FALSE}
-
-# Save plot
-file.name <- paste0("m_locs_ppcheck_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
-
-ggsave(here::here("Figures", file.name),
-       bg = "white",
-       plot = m2_ppcheck,
-       width = 3500,
-       height = 3000,
-       units = "px")
-
-```
-
-```{r, echo=FALSE, fig.cap="Posterior validation check for second model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_ppcheck_2023_03_07_235832.jpg")
-```
-
-Posterior distributions for model parameters
 
 ```{r, eval = FALSE, include = FALSE}
 
@@ -333,21 +297,17 @@ file.name <- paste0("m_locs_mcmc_plot_",
 
 ggsave(here::here("Figures", file.name),
        bg = "white",
-       plot = m2_mcmc,
+       plot = m2,
        width = 3500,
        height = 3000,
        units = "px")
 
 ```
 
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in second model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_mcmc_plot_2023_03_07_235930.jpg")
-```
-
-Posterior predictions per group (varying slopes and intercepts)
 
 ```{r, eval = FALSE, include = FALSE}
 
+# Posterior predictions per group (varying slopes and intercepts)
 # add posterior predictions
 post_loc_draws <- df %>% 
   data_grid(locations_std = seq_range(-2:3, n =50),
@@ -369,8 +329,6 @@ num_locs <- sapply(X = (seq(-2, 3, by = 0.5)),
 num_locs[2] <- "(0)"
 
 ```
-
-Plot predictions
 
 ```{r, include = FALSE, eval = FALSE}
 
@@ -450,7 +408,9 @@ p2_groups <- ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop
        y = "Performance Score") +
   theme_clean() +
   theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), legend.position = "bottom") +
+  theme(legend.title = element_blank(), 
+        legend.position = "bottom",
+        strip.text = element_text(size = 20)) +
   facet_wrap(~group)
 ```
 
@@ -468,13 +428,18 @@ ggsave(here::here("Figures", file.name),
 
 ```
 
-```{r, echo=FALSE, fig.cap="Group effects for second model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_pred_groups2023_03_08_000357.jpg")
+
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentracted vs spread variable. Notice that FL and CE require the most locations to achive optimal performance, and are the least robust to low quantities of locations. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_pred_groups2023_04_19_164620.jpg")
 ```
 
-### Number of unique weeks as predictor
 
-Set priors and model
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentracted vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_mcmc_plot_2023_04_19_163254.jpg")
+```
+
+
+## IV. Model 3: HR Performance ~ Number of Unique Weeks 
 
 ```{r, eval=FALSE, include = FALSE}
 # model with data
@@ -495,36 +460,16 @@ m_weeks <- brm(
 saveRDS(m_weeks, "Intermediate/Models/model_weeks.rds")
 ```
 
-Posterior validation check
 ```{r, eval = FALSE, include = FALSE}
 # read in model
 m_weeks <- readRDS("Intermediate/Models/model_weeks.rds")
 
 # posterior validation
-m3_ppcheck <- pp_check(m_weeks, ndraws = 50) 
-m3_mcmc <- mcmc_plot(m_weeks, type = 'areas') 
+pp_check(m_weeks, ndraws = 50)
+
+# get posteriors for model parameters
+m3 <- mcmc_plot(m_weeks, type = 'areas') 
 ```
-
-```{r, eval = FALSE, include = FALSE}
-
-# Save plot
-file.name <- paste0("m_weeks_ppcheck_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
-
-ggsave(here::here("Figures", file.name),
-       bg = "white",
-       plot = m3_ppcheck,
-       width = 3500,
-       height = 3000,
-       units = "px")
-
-```
-
-```{r, echo=FALSE, fig.cap="Posterior validation check for third model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_ppcheck_2023_03_07_235832.jpg")
-```
-
-Posterior distributions for model parameters
 
 ```{r, eval = FALSE, include = FALSE}
 
@@ -534,18 +479,12 @@ file.name <- paste0("m_weeks_mcmc_plot_",
 
 ggsave(here::here("Figures", file.name),
        bg = "white",
-       plot = m3_mcmc,
+       plot = m3,
        width = 3500,
        height = 3000,
        units = "px")
 
 ```
-
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in third model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_mcmc_plot_2023_03_07_235930.jpg")
-```
-
-Posterior predictions
 
 ```{r, include = FALSE, eval = FALSE}
 
@@ -569,7 +508,6 @@ num_weeks <- sapply(X = (seq(-2, 3, by = 0.5)),
 
 ```
 
-Plot predictions
 
 ```{r, eval=FALSE, include = FALSE}
 
@@ -666,7 +604,9 @@ p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, 
        y = "Performance Value") +
   theme_clean() +
   theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), legend.position = "bottom") +
+  theme(legend.title = element_blank(), 
+        legend.position = "bottom",
+        strip.text = element_text(size = 20)) +
   facet_wrap(~group)
 ```
 
@@ -684,8 +624,14 @@ ggsave(here::here("Figures", file.name),
 
 ```
 
-```{r, echo=FALSE, fig.cap="Group effects for third model", out.width = '75%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_pred_groups2023_03_08_001129.jpg")
+
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentracted vs spread variable. Notice that FL and CE require the most weeks to achive optimal performance, and are the least robust to low quantities of weeks. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_pred_groups2023_04_19_165605.jpg")
+```
+
+
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentracted vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_mcmc_plot_2023_04_19_165345.jpg")
 ```
 
 

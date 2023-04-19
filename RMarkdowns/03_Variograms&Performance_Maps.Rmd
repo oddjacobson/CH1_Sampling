@@ -1,6 +1,5 @@
 ---
 title: "Appendix 2: Home Range Analysis for the 60 Sampling Regimes"
-author: "Odd Jacobson"
 date: \today
 output:
   rmarkdown::pdf_document:
@@ -20,31 +19,30 @@ knitr::opts_chunk$set(fig.pos = "H", out.extra = "")
 
 ### Background
 
-The purpose of this document is to show the outputs of the home range analysis from the 60 sampling regimes. This includes the: 1) variogram regressions with the fitted movement models and 2) the movement model summary information, and 3) home range estimates (See Appendix 1 for a detailed description of how home range analysis in *ctmm* works.
+The purpose of this document is to show the full results of the home range analysis from the 60 sampling regimes (i.e. the results of applying the analytical workflow presented in Appendix 1 to our study). This includes the: 1) variogram regressions with the fitted movement models, 2) the movement model summary information, and 3) home range estimates (See Appendix 1 for a detailed description of how home range analysis in *ctmm* works).
 
 As a reminder, the 60 sampling regimes were generated from portions of our longitudinal movement dataset that were of the highest quality (two or more months of consistent data with very few temporal gaps), which we call "complete segments". There are six complete segments from five groups because two of the complete segments came from the same group at different time periods (AA and AA2). How the sampling regimes were generated from the complete segments is described in the Methods section of the main text. We include the important information for every complete segment (i.e. labelled as "all") and every sampling regime. The names of the sampling regimes are labelled with (C) for concentrated or (S) for spread, followed by the number of days in the data (e.g. C10).
 
 ```{r, message=FALSE, warning=FALSE, include = FALSE}
+# load packages
 library(tidyverse)
 library(ctmm)
 library(ctmmweb)
 library(sf)
 library(lubridate)
 library(janitor)
-library(data.table)
 ```
 
-**Note on variograms:**  These plots are used as visualization tools to see if the data was sufficient to show range residency. Generally, what we are looking for is whether the empirical variograms plateau indicating range residency. If the variograms continue to increase, then this is an immediate sign that the data is not suitable for home range estimation. With irregular data, the variograms can look quite messy, which is generally not a problem. Also, they tend to be a bit more unpredictable toward larger time-lags which also is not normally an issue. In these plots, we also include the mean and confidence intervals for the top movement model (determined by AICc) fitted to the empirical variogram. 
+**Note on variograms:**  These plots are used as visualization tools to see if the data are sufficient to show range residency. Generally, what we are looking for is whether the empirical variograms plateau indicating range residency. If the variograms continue to increase, then this is an immediate sign that the data is not suitable for home range estimation. With irregular data, the variograms can look quite messy, which is generally not a problem. Also, they tend to be a bit more unpredictable toward larger time-lags which also is not normally an issue. In these plots, we also include the mean and confidence intervals for the top movement model (determined by AICc) fitted to the empirical variogram. 
 
 **Note on model summaries:** For the complete segments and sampling regimes from each group, we show a table showing the name of the selected movement model, the home range crossing time and the effective sample size. Overall, the *Ornstein--Uhlenbeck Foraging* (OUF) model was always selected, meaning that the data showed autocorrelated positions and velocities (See Appendix 1 for decriptions of the possible movement models). The effective sample sizes  generally decrease with less days in the data. The effective sample sizes were generally above 10 for sampling regimes that had at least six days (e.g. C6, S6), but dropped to worrying low quantities with only 3 days (e.g. C3, S3).
 
 **Note on home range plots:** These plots show the 95% UD estimates with 95% CIs of the AKDE home range estimates for the 60 sampling regimes. 
 Each plot shows the total locations from the complete, but the closed green points are the locations that were selected in the regimes, and the open pink points are the locations that were thinned out. 
 
+The below figures and tables show the above information for each of the six groupings of sampling regimes (AA, AA2, RR, CE, SP, FL).
+
 ### I. AA Group
-
-
-#### i. Variograms
 
 
 ```{r, include=FALSE}
@@ -54,6 +52,7 @@ aa_fit <- readRDS("../Intermediate/FITS_aa.rds") # read in model fits
 ```{r, include=FALSE, eval=FALSE}
 aa_svf <- readRDS("../Intermediate/SVF_aa.rds") # read in variograms
 
+# save image of variograms plotted with model fits
 png(filename = "Figures/AA_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa_svf, aa_fit, 
            model_color = "#009E73", 
@@ -66,13 +65,16 @@ dev.off()
 
 
 ```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '95%'}
+# read in image
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_SVF.png")
 ```
 
-#### ii. Model Summary
 
 
 ```{r, include = FALSE}
+
+### MODEL SUMMARY
+
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
 names(aa_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
@@ -98,26 +100,27 @@ summarize_fits <- function(fit){
   
 }
 
-# wrapper to stack area info into data frame
+# wrapper to stack info into data frame
 make_summary_df <- function(id){
   map_dfr(id, summarize_fits) 
 }
 
+# apply function to get summary info
 aa_fits_summaries <- make_summary_df(aa_fit)
 
+# make table
 knitr::kable(aa_fits_summaries,
              col.names = c("individual.local.identifier",
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 1: Model summary information for AA group")
+             caption = "Model summary information for AA group")
 ```
 
 
-#### iii. HR Performance Maps
-
-
 ```{r, include=FALSE, eval=FALSE}
+
+## Home Range Plots
 
 # Get boundaries and points and change to sf object
 
@@ -125,9 +128,9 @@ knitr::kable(aa_fits_summaries,
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
 
-# data
+# change data to sf for mapping in ggplot
 aa_data_sf <- readRDS("Intermediate/DATA_aa.rds") %>% 
-  purrr::map(ctmm::as.sf) %>% 
+  purrr::map(ctmm::as.sf) %>% # map telemetery list into sf dataframe
   reduce(rbind) %>% 
   mutate(id = gsub("R", "S", identity),
          id = ifelse(id == "C1", "C30", 
@@ -142,10 +145,10 @@ aa_data_sf <- readRDS("Intermediate/DATA_aa.rds") %>%
                                                                              ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
-  filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  filter(!id == "all") %>% # remove complete segment to map only sampling regimes
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0") # change to utm
 
-# HR mean boundary
+# same procedure with HR mean boundary
 aa_akde_sf <- readRDS("Intermediate/AKDE_aa.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
@@ -167,7 +170,7 @@ aa_akde_sf <- readRDS("Intermediate/AKDE_aa.rds") %>%
   dplyr::select(id, geometry) %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# HR confidence boundaries
+# again with HR confidence boundaries
 aa_akde_CI <- readRDS("Intermediate/AKDE_aa.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
@@ -189,7 +192,7 @@ aa_akde_CI <- readRDS("Intermediate/AKDE_aa.rds") %>%
   dplyr::select(id, geometry) %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# get all points
+# do the same with locations from complete segment (to plot also the missing points)
 aa_all_data <- readRDS("Intermediate/DATA_aa.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
@@ -203,7 +206,9 @@ aa_all_data <- readRDS("Intermediate/DATA_aa.rds") %>%
 
 ```{r, include=FALSE, eval=FALSE}
 
-# Get data that was removed from complete segments to create regimes. These points will be shown on the maps.
+# Get data that was removed (missing locations) from complete segments to create sampling regimes. 
+# These points will be shown on the maps to illustrate how well the HR estimates captured the missing data.
+# this is done by doing anti_join of locations from the complete segment with the locations of each sampling regimes
 
 ## getting all thinned data
 # get unique ids
@@ -235,6 +240,8 @@ aa_thinned_data <- as.data.frame(do.call(rbind, aa_thinned_data)) %>%
 
 ```{r, include = FALSE, eval = FALSE}
 
+## make plot
+
 # get colors
 colors <- c("missing points" = "#de4968", "used points" = "#40bd72")
 shape <- c("missing points" = 1, "used points" = 16)
@@ -243,16 +250,16 @@ labels <- c("missing points", "used points")
 
 # plot
 p1 <- ggplot() +
-  geom_sf(data = aa_data_sf, 
+  geom_sf(data = aa_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
           inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = aa_thinned_data, 
+  geom_sf(data = aa_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
           inherit.aes = FALSE, alpha = 0.6) +
-  geom_sf(data = aa_akde_CI, 
+  geom_sf(data = aa_akde_CI, # HR CIs
           inherit.aes = FALSE, 
           fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
-  geom_sf(data = aa_akde_sf,
+  geom_sf(data = aa_akde_sf, # HR mean boundary
           inherit.aes = FALSE, 
           fill =NA , alpha = 0.06, size = 0.8) +
   ggspatial::annotation_scale(location = "bl", 
@@ -293,20 +300,21 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
+# read in plot
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_03_07_212749.jpg")
 ```
 
-### I. RR Group
-
-#### i. Variograms
-
-Below are the variograms for RR group. Similarily to CE group, there appears to be a shift after about a month.
+### II. RR Group
 
 ```{r, include=FALSE}
+
+### NOTE: SEE AA GROUP CODE FOR BETTER ANNOTATION -- THE SAME CODE IS USED FOR ALL GROUPS
+
 rr_fit <- readRDS("../Intermediate/FITS_rr.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
+# plot variograms
 
 rr_svf <- readRDS("Intermediate/SVF_rr.rds") # read in variograms
 
@@ -324,8 +332,6 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_SVF.png")
 ```
 
-#### ii. Model Summary
-
 ```{r, include = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
@@ -340,6 +346,7 @@ for (i in 1:length(names(rr_fit))){
 
 ```{r, echo = FALSE}
 
+# model summary table
 rr_fits_summaries <- make_summary_df(rr_fit)
 
 knitr::kable(rr_fits_summaries,
@@ -347,14 +354,11 @@ knitr::kable(rr_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 2: Model summary information for RR group")
+             caption = "Model summary information for RR group")
 ```
 
-#### HR Performance Maps
-
-Below are the HR performance maps for RR group. Spread sampling regimes did not seem to perform better than concentrated for this group. There is not much of a difference based on the maps alone. 
-
 ```{r, include=FALSE, eval=FALSE}
+# HR maps
 
 # Get boundaries and points and change to sf object
 
@@ -527,15 +531,12 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ## III. CE Group
 
-#### i. Variograms
-
-Below are the variograms for CE group. Notice how in the complete segment, the empirical variogram asymptotes then jumps up to a higher asymptote. This is the result of this group shifting within their range, which is only captured if the time lag is longer than about one month.
-
 ```{r, include = FALSE}
 ce_fit <- readRDS("../Intermediate/FITS_ce.rds") # read in model fits
 ```
 
 ```{r, include = FALSE, eval = FALSE}
+# plot variograms
 ce_svf <- readRDS("Intermediate/SVF_ce.rds") # read in variograms
 
 png(filename = "Figures/CE_SVF.png", width = 3000, height = 2200, units = "px")
@@ -553,8 +554,6 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_SVF.png")
 ```
 
-#### ii. Model Summary
-
 ```{r, include = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
@@ -568,7 +567,7 @@ for (i in 1:length(names(ce_fit))){
 
 
 ```{r, echo = FALSE}
-
+# plot model summary info
 ce_fits_summaries <- make_summary_df(ce_fit)
 
 knitr::kable(ce_fits_summaries,
@@ -576,14 +575,13 @@ knitr::kable(ce_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 3: Model summary information for CE group")
+             caption = "Model summary information for CE group")
 ```
 
-#### iii. HR Performance Maps
-
-Below are the HR performance maps. Notice how the concentrated regimes performed very poorly because they fail to capture the shift in space-use. 
 
 ```{r, include = FALSE, eval = FALSE}
+
+# HR plots
 
 # Get boundaries and points and change to sf object
 ## change to sf objects
@@ -754,15 +752,14 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ### IV. AA2 Group
 
-#### i. Variograms
-
-Below are the variograms for AA2 group, which is just another complete segment selected from AA group. 
 
 ```{r, include=FALSE}
 aa2_fit <- readRDS("../Intermediate/FITS_aa2.rds") # model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
+# plot variograms
+
 aa2_svf <- readRDS("Intermediate/SVF_aa2.rds") # read in variograms
 
 png(filename = "Figures/AA2_SVF.png", width = 3000, height = 2200, units = "px")
@@ -780,7 +777,6 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_SVF.png")
 ```
 
-#### ii. Model Summary
 
 ```{r, include = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
@@ -795,7 +791,7 @@ for (i in 1:length(names(aa2_fit))){
 
 
 ```{r, echo = FALSE}
-
+# model summary table
 aa2_fits_summaries <- make_summary_df(aa2_fit)
 
 knitr::kable(aa2_fits_summaries,
@@ -803,14 +799,13 @@ knitr::kable(aa2_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 4: Model summary information for AA2 group")
+             caption = "Model summary information for AA2 group")
 ```
 
-#### iii. HR Performance Maps
-
-Below are the HR performance maps for AA2 group.
 
 ```{r, include=FALSE, eval=FALSE}
+
+# make HR plots
 
 # Get boundaries and points and change to sf object
 
@@ -982,15 +977,12 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ### V. SP Group
 
-#### i. Variograms
-
-Below are the variograms for SP group. These tend to be messier than the other groups because this segment has a longer duration and therefore the time lag bins are more frequent. The messiness does not cause an issue; the main point of these is to see if there is an asymptote. 
-
 ```{r, include=FALSE}
 sp_fit <- readRDS("../Intermediate/FITS_sp.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
+# plot variograms
 sp_svf <- readRDS("Intermediate/SVF_sp.rds") # read in variograms
 
 png(filename = "Figures/SP_SVF.png", width = 3000, height = 2200, units = "px")
@@ -1007,8 +999,6 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_SVF.png")
 ```
 
-#### ii. Model Summary
-
 ```{r, include = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
@@ -1023,6 +1013,7 @@ for (i in 1:length(names(sp_fit))){
 
 ```{r, echo = FALSE}
 
+# plot model summary info
 sp_fits_summaries <- make_summary_df(sp_fit)
 
 knitr::kable(sp_fits_summaries,
@@ -1030,14 +1021,13 @@ knitr::kable(sp_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 2: Model summary information for SP group")
+             caption = "Model summary information for SP group")
 ```
 
-#### iii. HR Performance Maps
-
-Below are the HR performance maps for SP group.
 
 ```{r, include=FALSE, eval=FALSE}
+
+# make HR plots
 
 # Get boundaries and points and change to sf object
 
@@ -1209,15 +1199,13 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ### VI. FL Group
 
-#### i. Variograms
-
-Below are the variograms for FL group. 
-
 ```{r, include=FALSE}
 fl_fit <- readRDS("../Intermediate/FITS_fl.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
+# plot variograms
+
 fl_svf <- readRDS("Intermediate/SVF_fl.rds") # read in variograms
 
 png(filename = "Figures/FL_SVF.png", width = 3000, height = 2200, units = "px")
@@ -1234,7 +1222,6 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_SVF.png")
 ```
 
-#### ii. Model Summary
 
 ```{r, include = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
@@ -1249,7 +1236,7 @@ for (i in 1:length(names(fl_fit))){
 
 
 ```{r, echo = FALSE}
-
+# model summary tables
 fl_fits_summaries <- make_summary_df(fl_fit)
 
 knitr::kable(fl_fits_summaries,
@@ -1257,13 +1244,12 @@ knitr::kable(fl_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Table 6: Model summary information for FL group")
+             caption = "Model summary information for FL group")
 ```
-
-#### iii. HR Performance Maps
 
 
 ```{r, include=FALSE, eval=FALSE}
+#make HR plots
 
 # Get boundaries and points and change to sf object
 
