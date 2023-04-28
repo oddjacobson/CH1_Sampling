@@ -46,3 +46,6 @@ RMarkdowns/Appendix
 RMarkdowns/Old_Markdowns
 RMarkdowns/PDFs
 Scripts
+
+git rm -rf --cached .
+git add .
