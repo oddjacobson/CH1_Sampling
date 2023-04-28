@@ -208,12 +208,12 @@ ggsave(here::here("Figures", file.name),
 ```
 
 
-```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread." , fig.align='center' , out.width = '95%'}
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for binomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread." , fig.align='center' , out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_pred_groups2023_04_19_164443.jpg")
 ```
 
 
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in binomial model predicting home range estimation performance by a binary variable indicating whether the data in the sampling regimes are concentrated or spread. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_type_mcmc_plot_2023_04_19_162753.jpg")
 ```
 
@@ -410,6 +410,8 @@ p2_groups <- ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.title = element_blank(), 
         legend.position = "bottom",
+        legend.key.size = unit(2,'cm'),
+        legend.text = element_text(size=15),
         strip.text = element_text(size = 20)) +
   facet_wrap(~group)
 ```
@@ -429,12 +431,12 @@ ggsave(here::here("Figures", file.name),
 ```
 
 
-```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentracted vs spread variable. Notice that FL and CE require the most locations to achive optimal performance, and are the least robust to low quantities of locations. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_pred_groups2023_04_19_164620.jpg")
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for binomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentrated vs spread variable. Notice that FL and CE require the most locations to achive optimal performance, and are the least robust to low quantities of locations. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_pred_groups2023_04_28_163202.jpg")
 ```
 
 
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentracted vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in binomial model predicting home range estimation performance by number of locations as predictor with an interaction with the concentrated vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_locs_mcmc_plot_2023_04_19_163254.jpg")
 ```
 
@@ -587,7 +589,7 @@ mean_only_group <- post_weeks_draws %>%
   group_by(weeks_std, type, group) %>%
   summarize(.pred_prop = mean(.pred_prop))
 
-# plot
+# plot group effects
 p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, color = type, fill = type)) +
   geom_line(stat = "smooth", aes(group = paste(type, .draw)), alpha = 0.03, se = FALSE, lwd = 0.05) + # smooth posterior lines grouped by type
   geom_line(data = mean_only_group, stat = "smooth", # add mean line
@@ -606,6 +608,8 @@ p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, 
   theme_bw(base_family = "ArcherPro Book") +
   theme(legend.title = element_blank(), 
         legend.position = "bottom",
+        legend.key.size = unit(2,'cm'),
+        legend.text = element_text(size=15),
         strip.text = element_text(size = 20)) +
   facet_wrap(~group)
 ```
@@ -625,12 +629,12 @@ ggsave(here::here("Figures", file.name),
 ```
 
 
-```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for bionomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentracted vs spread variable. Notice that FL and CE require the most weeks to achive optimal performance, and are the least robust to low quantities of weeks. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_pred_groups2023_04_19_165605.jpg")
+```{r, echo=FALSE, fig.cap="Group effects (varying slopes and intercepts) for binomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentrated vs spread variable. Notice that FL and CE require the most weeks to achive optimal performance, and are the least robust to low quantities of weeks. These groups also have the most fragmented habitats (see Discussion section in the main text).", fig.align='center', out.width = '95%'}
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_pred_groups2023_04_28_163441.jpg")
 ```
 
 
-```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in bionomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentracted vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
+```{r, echo=FALSE, fig.cap="Posterior distributions for parameters in binomial model predicting home range estimation performance by number of unique weeks as predictor with an interaction with the concentrated vs spread variable. Group is included as a random effect (random slopes and intercepts). Posteriors include the median and 80\\% credible intervals.", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/m_weeks_mcmc_plot_2023_04_19_165345.jpg")
 ```
 

@@ -529,7 +529,7 @@ ggsave(here::here("Figures", file.name.performance),
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_03_07_212625.jpg")
 ```
 
-## III. CE Group
+### III. CE Group
 
 ```{r, include = FALSE}
 ce_fit <- readRDS("../Intermediate/FITS_ce.rds") # read in model fits

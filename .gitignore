@@ -39,6 +39,10 @@ vignettes/*.pdf
 .Renviron
 
 # files
-Data
+Data/30min_trkpts_formatted
+Data/trk.rds
 Figures
 RMarkdowns/Appendix
+RMarkdowns/Old_Markdowns
+RMarkdowns/PDFs
+Scripts
