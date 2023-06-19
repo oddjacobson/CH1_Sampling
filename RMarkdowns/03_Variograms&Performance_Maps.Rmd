@@ -532,7 +532,7 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 ### III. CE Group
 
 ```{r, include = FALSE}
-ce_fit <- readRDS("../Intermediate/FITS_ce.rds") # read in model fits
+ce_fit <- readRDS("Intermediate/ctmm/FITS_ce.rds") # read in model fits
 ```
 
 ```{r, include = FALSE, eval = FALSE}
@@ -587,27 +587,16 @@ knitr::kable(ce_fits_summaries,
 ## change to sf objects
 
 # data
-ce_data_sf <- readRDS("Intermediate/DATA_ce.rds") %>% 
+ce_data_sf <- readRDS("Intermediate/ctmm/DATA_ce.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
-         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
+  mutate(id = factor(identity, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-ce_akde_sf <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+ce_akde_sf <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
   mutate(name = gsub("R", "S", name),
@@ -629,7 +618,7 @@ ce_akde_sf <- readRDS("Intermediate/AKDE_ce.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-ce_akde_CI <- readRDS("Intermediate/AKDE_ce.rds") %>% 
+ce_akde_CI <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
   mutate(name = gsub("R", "S", name),
@@ -651,7 +640,7 @@ ce_akde_CI <- readRDS("Intermediate/AKDE_ce.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-ce_all_data <- readRDS("Intermediate/DATA_ce.rds") %>% 
+ce_all_data <- readRDS("Intermediate/ctmm/DATA_ce.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
   mutate(id = gsub("R", "S", identity)) %>% 
@@ -705,10 +694,10 @@ p3 <- ggplot() +
           inherit.aes = FALSE, alpha = 0.8) +
   geom_sf(data = ce_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = ce_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -718,11 +707,11 @@ p3 <- ggplot() +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
-  scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
-  scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
+  # scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
+  # scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
   guides(color=guide_legend(override.aes=list(size = 8)))+
   labs( x = "Easting (km)", y = "Northing (km)") +
-  theme_bw(base_family = "ArcherPro Book") +
+  #theme_bw(base_family = "ArcherPro Book") +
   theme(legend.position="bottom", 
         legend.title = element_blank(),
         legend.text=element_text(size=14),
@@ -730,8 +719,15 @@ p3 <- ggplot() +
         axis.title = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        strip.text = element_text(size = 15)) +
-  facet_wrap(~factor(id), nrow = 2) 
+        strip.text = element_text(size = 15),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5)) +
+  facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2)
 ```
 
 ```{r, include=FALSE, eval = FALSE}

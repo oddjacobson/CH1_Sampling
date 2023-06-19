@@ -26,6 +26,7 @@ library(lubridate)
 library(sp)
 library(patchwork)
 library(RColorBrewer)
+library(ggthemes)
 ```
 
 ```{r, eval = FALSE}
@@ -673,6 +674,17 @@ FL_ctmm <- list(fl.comp,fl.c30,fl.c20,fl.c10,fl.c6,fl.c3,fl.s30,fl.s20,fl.s10,fl
 names(FL_ctmm) <- c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
 ```
 
+```{r, include=FALSE, eval=FALSE}
+
+saveRDS(AA_ctmm, "Intermediate/ctmm/DATA_aa.rds")
+saveRDS(AA2_ctmm, "Intermediate/ctmm/DATA_aa2.rds")
+saveRDS(CE_ctmm, "Intermediate/ctmm/DATA_ce.rds")
+saveRDS(FL_ctmm, "Intermediate/ctmm/DATA_fl.rds")
+saveRDS(RR_ctmm, "Intermediate/ctmm/DATA_rr.rds")
+saveRDS(SP_ctmm, "Intermediate/ctmm/DATA_sp.rds")
+
+```
+
 ### Temporal Plots
 
 Function to get global axes
@@ -734,21 +746,113 @@ browns <- rev(colorRampPalette(hcl.colors(8, "BrwnYl"))(20)[4:16])
 
 Make plots
 
+```{r, include = FALSE, eval=FALSE}
+AA_ctmm <- readRDS("Intermediate/ctmm/DATA_aa.rds")
+AA2_ctmm <- readRDS("Intermediate/ctmm/DATA_aa2.rds")
+CE_ctmm <- readRDS("Intermediate/ctmm/DATA_ce.rds")
+FL_ctmm <- readRDS("Intermediate/ctmm/DATA_fl.rds")
+SP_ctmm <- readRDS("Intermediate/ctmm/DATA_sp.rds")
+RR_ctmm <- readRDS("Intermediate/ctmm/DATA_rr.rds")
+
+```
+
+```{r, eval=FALSE}
+
+# SOURCE CODE TAKEN FROM CTMMWEB: https://rdrr.io/github/ctmm-initiative/ctmmweb/src/R/2_plot.R
+#' Override some ggplot2 default theme settings
+#'
+#' - `BIGGER_THEME` increase the default ggplot2 legend, axis size
+#' - `BIGGER_KEY` increase default legend key size
+#' - `CENTER_TITLE` place title in center and bold
+#'
+#' @format A `ggplot2` function call of `ggplot2::theme` or `ggplot2::guides`
+#' @rdname ggplot_customization
+BIGGER_THEME <- ggplot2::theme(legend.key.size = grid::unit(8, "mm"),
+                               legend.key.height = grid::unit(8, "mm"),
+                               legend.text = ggplot2::element_text(size = 15),
+                               legend.title = ggplot2::element_blank(),
+                               axis.title = ggplot2::element_text(size = 18),
+                               axis.text = ggplot2::element_text(size = 15))
+#' @rdname ggplot_customization
+BIGGER_KEY <- ggplot2::guides(colour = ggplot2::guide_legend(
+  override.aes = list(size = 4)))
+#' @rdname ggplot_customization
+CENTER_TITLE <- ggplot2::theme(plot.title = ggplot2::element_text(
+  hjust = 0.5, face = "bold"))
+# coord fixed ----
+# need this to hide the warning https://github.com/tidyverse/ggplot2/issues/2799
+# this is only needed when we added coord_fixed in function, then added another call in app to zoom. other single use in regular plot don't need this.
+coord_fixed_no_warning <- ggplot2::coord_fixed()
+coord_fixed_no_warning$default <- TRUE
+# color mapper ----
+# map color to a factor with unused levels included, but don't show them in legend.
+# note need to use loc_data$id format. note the mapping is provided in aes(color/fill = xx) already, this is to override some options.
+factor_mapper <- function(fac, FUN) {
+  FUN(drop = FALSE, breaks = levels(droplevels(fac)))
+}
+factor_color <- function(fac) {
+  # scale_colour_hue(drop = FALSE, breaks = levels(droplevels(fac)))
+  factor_mapper(fac, ggplot2::scale_colour_hue)
+}
+# note for fill colors we need different function
+factor_fill <- function(fac) {
+  # scale_fill_hue(drop = FALSE, breaks = levels(droplevels(fac)))
+  factor_mapper(fac, ggplot2::scale_fill_hue)
+}
+plot_time <- function(loc_data_subset) {
+  ggplot2::ggplot(data = loc_data_subset,
+                  ggplot2::aes(x = timestamp, fill = id)) +
+    ggplot2::geom_histogram(bins = 60) +
+    factor_fill(loc_data_subset$id) +
+    ggplot2::facet_grid(id ~ .) +
+    ggplot2::theme(strip.text.y = ggplot2::element_text(size = 12)) +
+    BIGGER_THEME + BIGGER_KEY
+}
+# changed slightly for SP and FL
+plot_time2 <- function(loc_data_subset) {
+  ggplot2::ggplot(data = loc_data_subset,
+                  ggplot2::aes(x = timestamp, fill = id)) +
+    ggplot2::geom_histogram(bins = 80) +
+    factor_fill(loc_data_subset$id) +
+    ggplot2::facet_grid(id ~ .) +
+    ggplot2::theme(strip.text.y = ggplot2::element_text(size = 12)) +
+    BIGGER_THEME + BIGGER_KEY
+}
+
+# changed slightly for AA AA2 and RR
+plot_time3 <- function(loc_data_subset) {
+  ggplot2::ggplot(data = loc_data_subset,
+                  ggplot2::aes(x = timestamp, fill = id)) +
+    ggplot2::geom_histogram(bins = 45) +
+    factor_fill(loc_data_subset$id) +
+    ggplot2::facet_grid(id ~ .) +
+    ggplot2::theme(strip.text.y = ggplot2::element_text(size = 12)) +
+    BIGGER_THEME + BIGGER_KEY
+}
+```
+
+
 ```{r, eval = FALSE}
 
 p1 <- AA_ctmm %>% 
   collect() %>%  
   purrr::pluck("data_dt") %>% 
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
-  plot_time() + 
+  plot_time3() + 
   theme_bw() +
-  ggtitle("AA Group") + 
+  ggtitle("AA Group (2014)") + 
   scale_fill_manual(values = greens) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank()) 
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 
 p2 <- CE_ctmm %>% 
   collect() %>%  
@@ -756,79 +860,109 @@ p2 <- CE_ctmm %>%
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
   plot_time() + 
   theme_bw() +
-  ggtitle("CE Group") + 
+  ggtitle("CE Group (2017)") + 
   scale_fill_manual(values = oranges) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank())
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 
 p3 <- RR_ctmm %>% 
   collect() %>%  
   purrr::pluck("data_dt") %>%
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
-  plot_time() + 
+  plot_time3() + 
   theme_bw() +
-  ggtitle("RR Group") + 
+  ggtitle("RR Group (2010)") + 
   scale_fill_manual(values = blues) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank())
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 
 
 p4 <- AA2_ctmm %>% 
   collect() %>%  
   purrr::pluck("data_dt") %>%
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
-  plot_time() + 
+  plot_time3() + 
   theme_bw() +
-  ggtitle("AA2 Group") + 
+  ggtitle("AA2 Group (2013)") + 
   scale_fill_manual(values = purples) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank())
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 
 p5 <- SP_ctmm %>% 
   collect() %>%  
   purrr::pluck("data_dt") %>%
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
-  plot_time() + 
+  plot_time2() + 
   theme_bw() +
-  ggtitle("SP Group") + 
+  ggtitle("SP Group (2010)") + 
   scale_fill_manual(values = reds) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank())
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 
 p6 <- FL_ctmm %>% 
   collect() %>%  
   purrr::pluck("data_dt") %>%
   mutate(id = factor(id, levels = c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
-  plot_time() + 
+  plot_time2() + 
   theme_bw() +
-  ggtitle("FL Group") + 
+  ggtitle("FL Group (2013/2014)") + 
   scale_fill_manual(values = browns) +
-  scale_y_continuous(breaks=c(0,25,50)) +
-  theme(plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+  scale_y_continuous(breaks=c(0,25)) +
+  theme(plot.title = element_text(face = "bold", size = 25, hjust = 0.5),
         legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title = element_blank())
+        axis.text = element_text(size = 20),
+        axis.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text.y = element_text(size = 20, angle = 0),
+        panel.spacing = unit(0.6, "lines"))
 ```
 
 Combine and save
 
 ```{r, eval = FALSE}
 regime_plots <- ((p1 + p2 + p3 + p4 + p5 + p6) + plot_layout(ncol = 3)) %>% 
-  add_global_label(Ylab = "Data Count",
-                   Xlab = "Time",
-                   size = 5)
+  add_global_label(Ylab = "Number of Recorded Locations",
+                   Xlab = "Date",
+                   size = 15)
 ```
 
 ```{r pressure, echo=FALSE, fig.cap="Thinned sampling regimes", fig.align='center', out.width = '75%'}
@@ -842,8 +976,8 @@ file.name <- paste0("regime_plot",
 
 ggsave(here::here("Figures", file.name),
        plot = regime_plots,
-       width = 3000,
-       height = 2600,
+       width = 6500,
+       height = 5000,
        units = "px")
 ```
 
@@ -946,10 +1080,13 @@ full_data_plot <- d_sum %>%
         axis.text.y = element_text(size = 7),
         legend.position = "none",
         plot.title = element_text(hjust = 0.5)) +
-  scale_y_continuous(limits = c(0,1), breaks = 1,  labels = "13h") +
+  scale_y_continuous(limits = c(0,1), breaks = 1,  labels = "13h", ) +
   scale_x_date(breaks = scales::date_breaks("1 years"), labels = scales::date_format("%Y")) + 
-  labs(x = "Date", y = "") +
-  theme(axis.text.y = element_text(size = 12)) +
+  labs(x = "Date", y = "Tracking Time") +
+  theme(strip.text.y = element_text(size = 20, angle = 0),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 17),
+        axis.title = element_text(size = 30)) +
   facet_grid(group ~ ., drop = TRUE) 
 ```
 
@@ -964,8 +1101,8 @@ file.name <- paste0("Data_plot_regime_boxed",
 
 ggsave(here::here("Figures", file.name),
        plot = full_data_plot,
-       width = 3000,
-       height = 2600,
+       width = 4300,
+       height = 2800,
        units = "px")
 ```
 

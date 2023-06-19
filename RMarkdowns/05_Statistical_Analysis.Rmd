@@ -237,7 +237,11 @@ p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   theme(axis.text = element_text(size = 15),
         axis.title.y = element_text(size = 20),
         axis.title.x = element_blank(),
-        plot.title = element_text(size = 20))
+        plot.title = element_text(size = 20),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 ```
 
@@ -377,7 +381,11 @@ p2 <- ggplot(data = post_loc_draws,
         legend.key.size = unit(1, 'cm'), #change legend key size
         legend.key.height = unit(1, 'cm'), #change legend key height
         legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.text = element_text(size=13)) +
+        legend.text = element_text(size=13),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
   guides(color=guide_legend(title="Sampling Regularity")) 
   
 
@@ -561,7 +569,11 @@ p3 <- ggplot(data = post_weeks_draws,
         legend.key.size = unit(1, 'cm'), #change legend key size
         legend.key.height = unit(1, 'cm'), #change legend key height
         legend.key.width = unit(1, 'cm'), #change legend key width
-        legend.text = element_text(size=13)) +
+        legend.text = element_text(size=13),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
   guides(color=guide_legend(title="Sampling Regularity")) 
 
 p3
@@ -702,7 +714,11 @@ p1 <- ggplot(ame_locs_clumped, aes(x = .value,
         axis.title = element_blank(),
         axis.text = element_text(size = 12),
         plot.title = element_text(size = 20, vjust = -5),
-        plot.subtitle = ggtext::element_markdown(hjust = 0.5, size = 15))
+        plot.subtitle = ggtext::element_markdown(hjust = 0.5, size = 15),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 # spread locations
 cred_intervals_locs_spread <- m_locs %>% 
@@ -760,7 +776,11 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value,
         axis.text = element_text(size = 12),
         axis.text.y=element_blank(),
         plot.title = element_text(size = 20, vjust = -5),
-        plot.subtitle = ggtext::element_markdown(hjust = 0.5, size = 15))
+        plot.subtitle = ggtext::element_markdown(hjust = 0.5, size = 15),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 # clumped weekss
 cred_intervals_weeks_clumped <- m_weeks %>% 
@@ -817,7 +837,11 @@ p3 <- ggplot(ame_weeks_clumped, aes(x = .value,
         legend.background = element_rect(fill=alpha(0.1)),
         axis.text = element_text(size = 12),
         axis.title = element_blank(),
-        plot.title = element_text(size = 20, vjust = -0.5))
+        plot.title = element_text(size = 20, vjust = -0.5),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 # spread weeks
 cred_intervals_weeks_spread <- m_weeks %>% 
@@ -873,7 +897,11 @@ p4 <- ggplot(ame_weeks_spread, aes(x = .value,
         axis.text = element_text(size = 12),
         axis.text.y=element_blank(),
         axis.title = element_blank(),
-        plot.title = element_text(size = 20, vjust = -0.5))
+        plot.title = element_text(size = 20, vjust = -0.5),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 ```
 
 ```{r, include = FALSE, eval = FALSE}
