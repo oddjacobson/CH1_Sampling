@@ -3,7 +3,11 @@ library(tidyverse)
 library(ctmm)
 library(ctmmweb)
 library(sf)
+library(sp)
 library(lubridate)
+library(mapview)
+library(patchwork)
+library(cowplot)
 
 # load in home ranges from complete segments
 AA <- readRDS("Intermediate/ctmm/AKDE_aa.rds")[[1]]
@@ -18,147 +22,339 @@ SP <- readRDS("Intermediate/ctmm/AKDE_sp.rds")[[1]]
 data <- readRDS("Data/30min_trkpts_formatted") %>% 
   mutate(group = str_sub(individual.local.identifier, 1, 2))
 
+# double check CE weird points are real -- look in database
 ce <- data %>% 
   filter(group == "CE") %>% 
   st_as_sf(coords = c(3,4), crs = "+proj=longlat +datum=WGS84 +no_defs")
+mapview(ce)
 
+# clean bad points from FL group
 fl <- data %>% 
   filter(group == "FL") %>% 
-  st_as_sf(coords = c(3,4), crs = "+proj=longlat +datum=WGS84 +no_defs")
-mapview::mapview(ce)
-mapview::mapview(fl)
-## get future data for sunsequent 3 years for each group and convert to tele object
+  st_as_sf(coords = c(3,4), crs = "+proj=longlat +datum=WGS84 +no_defs") %>% 
+  slice(-c(6180:6196)) %>% # clean some bad points
+  bind_cols(.,st_coordinates(.) %>% as_tibble()) %>%
+  as_tibble() %>% 
+  dplyr::select(-geometry) %>%
+  dplyr::select(individual.local.identifier,
+                location.long = X,
+                location.lat = Y,
+                timestamp,
+                season,
+                year,
+                group) %>%
+  arrange(individual.local.identifier, timestamp)
+
+# add back to main data frame
+data <- data %>% 
+  filter(!group == "FL") %>% 
+  rbind(fl)
+
+
+## get data within season, within year, past and future year
 
 # aa
 
-aa_future <- data %>%
-  filter(group == "AA",
-         year %in% c("2014", "2015"),
-         as_date(timestamp) > as_date("2014-02-28"),
-         as_date(timestamp) < as_date("2015-03-01")) %>%
-  dplyr::select(-individual.local.identifier) %>%
-  rename(individual.local.indentifier = group) %>%
-  arrange(timestamp) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
-
-aa_past <- data %>%
-  filter(group == "AA",
-         year %in% c("2013")) %>%
-  dplyr::select(-individual.local.identifier) %>%
-  rename(individual.local.indentifier = group) %>%
-  arrange(timestamp) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
-
-# aa_past_future <- data %>% 
-#   filter(group == "AA", 
-#          year %in% c("2014", "2015", "2016", "2017"),
-#          as_date(timestamp) > as_date("2014-02-28"),
-#          as_date(timestamp) < as_date("2017-03-01")) %>% 
-#   dplyr::select(-individual.local.identifier) %>% 
-#   rename(individual.local.indentifier = group) %>% 
-#   arrange(timestamp) %>% 
+# aa_season <- data %>% 
+#   filter(group == "AA",
+#          year=="2014",
+#          individual.local.identifier=="AA_dry",
+#          !month(timestamp) %in% c(1,2)) %>% 
+#   dplyr::select(-individual.local.identifier) %>%
+#   rename(individual.local.indentifier = group) %>%
+#   arrange(timestamp) %>%
 #   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# aa2
-aa2_future <- data %>% 
-  filter(group == "AA", 
-         year %in% c("2014")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+aa_year <- data %>% 
+  filter(group == "AA",
+         year=="2014",
+         #!individual.local.identifier=="AA_dry",
+         !month(timestamp) %in% c(1,2)) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-aa2_past <- data %>% 
-  filter(group == "AA", 
-         year %in% c("2012", "2013"),
-         as_date(timestamp) < as_date("2013-11-01"),
-         as_date(timestamp) > as_date("2012-10-31")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+aa_next_year <- data %>% 
+  filter(group == "AA",
+         year=="2015") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa_prev_year <- data %>% 
+  filter(group == "AA",
+         year=="2013") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+
+# aa2
+# aa2_season <- data %>% 
+#   filter(group == "AA",
+#          year=="2013",
+#          individual.local.identifier=="AA_wet",
+#          !month(timestamp) %in% c(11,12)) %>% 
+#   dplyr::select(-individual.local.identifier) %>%
+#   rename(individual.local.indentifier = group) %>%
+#   arrange(timestamp) %>%
+#   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa2_year <- data %>% 
+  filter(group == "AA",
+         year=="2013",
+         #!individual.local.identifier=="AA_wet",
+         !month(timestamp) %in% c(11,12)) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa2_next_year <- data %>% 
+  filter(group == "AA",
+         year=="2014") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+aa2_prev_year <- data %>% 
+  filter(group == "AA",
+         year=="2012") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # rr
-rr_future <- data %>% 
-  filter(group == "RR", 
-         year %in% c("2010", "2011"),
-         as_date(timestamp) > as_date("2010-05-30"),
-         as_date(timestamp) < as_date("2011-06-01")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+# rr_season <- data %>% 
+#   filter(group == "RR",
+#          year=="2010",
+#          #individual.local.identifier=="RR_dry",
+#          !month(timestamp) %in% c(4,5)) %>% 
+#   dplyr::select(-individual.local.identifier) %>%
+#   rename(individual.local.indentifier = group) %>%
+#   arrange(timestamp) %>%
+#   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+rr_year <- data %>% 
+  filter(group == "RR",
+         year=="2010",
+         #!individual.local.identifier=="RR_dry",
+         !month(timestamp) %in% c(4,5)) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-rr_past <- data %>% 
-  filter(group == "RR", 
-         year %in% c("2009", "2010"),
-         as_date(timestamp) < as_date("2010-04-01"),
-         as_date(timestamp) > as_date("2009-03-31")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+rr_next_year <- data %>% 
+  filter(group == "RR",
+         year=="2011") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+rr_prev_year <- data %>% 
+  filter(group == "RR",
+         year=="2009") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # ce
-ce_future <- data %>% 
-  filter(group == "CE", 
-         year %in% c("2017", "2018"),
-         as_date(timestamp) > as_date("2017-09-30"),
-         as_date(timestamp) < as_date("2018-10-01")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+# ce_season <- data %>% 
+#   filter(group == "CE",
+#          year=="2017",
+#          individual.local.identifier=="CE_wet",
+#          !month(timestamp) %in% c(7,8,9)) %>% 
+#   dplyr::select(-individual.local.identifier) %>%
+#   rename(individual.local.indentifier = group) %>%
+#   arrange(timestamp) %>%
+#   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_year <- data %>% 
+  filter(group == "CE",
+         year=="2017",
+         #!individual.local.identifier=="CE_wet",
+         !month(timestamp) %in% c(7,8,9)) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-ce_past <- data %>% 
-  filter(group == "CE", 
-         year %in% c("2016", "2017"),
-         as_date(timestamp) < as_date("2017-07-01"),
-         as_date(timestamp) > as_date("2016-06-30")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+ce_next_year <- data %>% 
+  filter(group == "CE",
+         year=="2018") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+ce_prev_year <- data %>% 
+  filter(group == "CE",
+         year=="2016") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # fl
-fl_future <- data %>% 
-  filter(group == "FL", 
-         year %in% c("2014", "2015"),
-         as_date(timestamp) > as_date("2014-02-28"),
-         as_date(timestamp) < as_date("2015-03-01")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+# fl_season <- data %>% 
+#   filter(group == "FL",
+#          year=="2013",
+#          individual.local.identifier=="FL_wet",
+#          !month(timestamp) %in% c(11,12)) %>% 
+#   dplyr::select(-individual.local.identifier) %>%
+#   rename(individual.local.indentifier = group) %>%
+#   arrange(timestamp) %>%
+#   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+fl_year <- data %>% 
+  filter(group == "FL",
+         year=="2013",
+         #!individual.local.identifier=="FL_wet",
+         !month(timestamp) %in% c(11,12)) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-fl_past <- data %>% 
-  filter(group == "FL", 
-         year %in% c("2012", "2013"),
-         as_date(timestamp) < as_date("2013-11-01"),
-         as_date(timestamp) > as_date("2012-10-31")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+fl_next_year <- data %>% 
+  filter(group == "FL",
+         year=="2014") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+fl_prev_year <- data %>% 
+  filter(group == "FL",
+         year=="2012") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # sp
-sp_future <- data %>% 
-  filter(group == "SP", 
-         year %in% c("2011")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+
+# splinters complete segment already includes the full season so no points left out
+
+sp_year <- data %>% 
+  filter(group == "SP",
+         year=="2010",
+         !individual.local.identifier=="SP_wet") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-sp_past <- data %>% 
-  filter(group == "SP", 
-         year %in% c("2009", "2010"),
-         as_date(timestamp) < as_date("2010-07-01"),
-         as_date(timestamp) > as_date("2009-06-30")) %>% 
-  dplyr::select(-individual.local.identifier) %>% 
-  rename(individual.local.indentifier = group) %>% 
-  arrange(timestamp) %>% 
+sp_next_year <- data %>% 
+  filter(group == "SP",
+         year=="2011") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+sp_prev_year <- data %>% 
+  filter(group == "SP",
+         year=="2009") %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# put into list for proportion calculations
+sp_dlist <- list(sp_year, sp_next_year, sp_prev_year)
+names(sp_dlist) <- c("sp_year", "sp_next_year", "sp_prev_year")
+
+aa_dlist <- list(aa_year, aa_next_year, aa_prev_year)
+names(aa_dlist) <- c("aa_year", "aa_next_year", "aa_prev_year")
+
+fl_dlist <- list(fl_year, fl_next_year, fl_prev_year)
+names(fl_dlist) <- c("fl_year", "fl_next_year", "fl_prev_year")
+
+#.....................................
+#
+# Calculate proportion of points within HR for AA and SP
+AAt <- AAp <-  AAp_low <- AAp_high <- AAf <-  AAf_low <- AAf_high <- list()
+for(i in 1:length(aa_dlist)){
+  AAt[[i]] <- SpatialPoints.telemetry(aa_dlist[i]) %over% SpatialPolygonsDataFrame.UD(AA ,level.UD=0.95) %>% 
+    table(useNA = "always") %>% # keep number of points that fell outside upper CI
+    data.frame()  %>% 
+    mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
+           Freq = Freq); 
+  AAf[[i]] <- AAt[[i]]$Freq[1] + AAt[[i]]$Freq[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  AAf_low[[i]] <- AAt[[i]]$Freq[3]; # proportion only within lower bound
+  AAf_high[[i]] <- AAt[[i]]$Freq[1] + AAt[[i]]$Freq[2] + AAt[[i]]$Freq[3]; # all combined to get upper bound
+  AAp[[i]] <- AAt[[i]]$Prop[1] + AAt[[i]]$Prop[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  AAp_low[[i]] <- AAt[[i]]$Prop[3]; # proportion only within lower bound
+  AAp_high[[i]] <- AAt[[i]]$Prop[1] + AAt[[i]]$Prop[2] + AAt[[i]]$Prop[3]
+}
+names(AAt) <- names(AAp_low) <- names(AAp_high) <- names(AAp) <- names(AAf_low) <- names(AAf_high) <- names(AAf) <- names(aa_dlist)
+
+
+SPt <- SPp <-  SPp_low <- SPp_high <- SPf <-  SPf_low <- SPf_high <- list()
+for(i in 1:length(sp_dlist)){
+  SPt[[i]] <- SpatialPoints.telemetry(sp_dlist[i]) %over% SpatialPolygonsDataFrame.UD(SP ,level.UD=0.95) %>% 
+    table(useNA = "always") %>% # keep number of points that fell outside upper CI
+    data.frame()  %>% 
+    mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
+           Freq = Freq); 
+  SPf[[i]] <- SPt[[i]]$Freq[1] + SPt[[i]]$Freq[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  SPf_low[[i]] <- SPt[[i]]$Freq[3]; # proportion only within lower bound
+  SPf_high[[i]] <- SPt[[i]]$Freq[1] + SPt[[i]]$Freq[2] + SPt[[i]]$Freq[3]; # all combined to get upper bound
+  SPp[[i]] <- SPt[[i]]$Prop[1] + SPt[[i]]$Prop[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  SPp_low[[i]] <- SPt[[i]]$Prop[3]; # proportion only within lower bound
+  SPp_high[[i]] <- SPt[[i]]$Prop[1] + SPt[[i]]$Prop[2] + SPt[[i]]$Prop[3]
+}
+names(SPt) <- names(SPp_low) <- names(SPp_high) <- names(SPp) <- names(SPf_low) <- names(SPf_high) <- names(SPf) <- names(sp_dlist)
+
+FLt <- FLp <-  FLp_low <- FLp_high <- FLf <-  FLf_low <- FLf_high <- list()
+for(i in 1:length(fl_dlist)){
+  FLt[[i]] <- SpatialPoints.telemetry(fl_dlist[i]) %over% SpatialPolygonsDataFrame.UD(FL ,level.UD=0.95) %>% 
+    table(useNA = "always") %>% # keep number of points that fell outside upper CI
+    data.frame()  %>% 
+    mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
+           Freq = Freq); 
+  FLf[[i]] <- FLt[[i]]$Freq[1] + FLt[[i]]$Freq[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  FLf_low[[i]] <- FLt[[i]]$Freq[3]; # proportion only within lower bound
+  FLf_high[[i]] <- FLt[[i]]$Freq[1] + FLt[[i]]$Freq[2] + FLt[[i]]$Freq[3]; # all combined to get upper bound
+  FLp[[i]] <- FLt[[i]]$Prop[1] + FLt[[i]]$Prop[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  FLp_low[[i]] <- FLt[[i]]$Prop[3]; # proportion only within lower bound
+  FLp_high[[i]] <- FLt[[i]]$Prop[1] + FLt[[i]]$Prop[2] + FLt[[i]]$Prop[3]
+}
+names(FLt) <- names(FLp_low) <- names(FLp_high) <- names(FLp) <- names(FLf_low) <- names(FLf_high) <- names(FLf) <- names(fl_dlist)
+
+props_df <- tibble(ID = names(aa_dlist),
+                   Group = "AA",
+                   Prop = as.numeric(unlist(AAp)),
+                   Prop_low = as.numeric(unlist(AAp_low)),
+                   Prop_high = as.numeric(unlist(AAp_high)),
+                   Freq = as.numeric(unlist(AAf)),
+                   Freq_low = as.numeric(unlist(AAf_low)),
+                   Freq_high = as.numeric(unlist(AAf_high))) %>%
+  rbind(tibble(ID = names(sp_dlist),
+               Group = "SP",
+               Prop = as.numeric(unlist(SPp)),
+               Prop_low = as.numeric(unlist(SPp_low)),
+               Prop_high = as.numeric(unlist(SPp_high)),
+               Freq = as.numeric(unlist(SPf)),
+               Freq_low = as.numeric(unlist(SPf_low)),
+               Freq_high = as.numeric(unlist(SPf_high)))) %>% 
+  rbind(tibble(ID = names(fl_dlist),
+               Group = "FL",
+               Prop = as.numeric(unlist(FLp)),
+               Prop_low = as.numeric(unlist(FLp_low)),
+               Prop_high = as.numeric(unlist(FLp_high)),
+               Freq = as.numeric(unlist(FLf)),
+               Freq_low = as.numeric(unlist(FLf_low)),
+               Freq_high = as.numeric(unlist(FLf_high))))
 
 
 #...............................
@@ -170,9 +366,17 @@ par(mfrow = c(2,3))
 plot(x = list(aa_future, aa_past), UD = AA, main= "AA", col = c("red", "yellow"))
 plot(x = list(aa2_future, aa2_past), UD = AA2, main= "AA2", col = c("red", "yellow"))
 plot(x = list(ce_future, ce_past), UD = CE, main= "CE", col = c("red", "yellow"))
-plot(x = list(fl_future, fl_past), UD = FL, main= "FL", col = c("red", "yellow"))
-plot(x = list(rr_future, rr_past), UD = RR, main= "RR", col = c("red", "yellow"))
+plot(x = list(fl_future, fl_past), UD = FL, main= "FL", lwd = 2, col = c("red", "yellow"))
+plot(x = list(rr_future, rr_past), UD = RR, main= "RR", lwd = 2, col = c("red", "yellow"))
 plot(x = list(sp_future, sp_past), UD = SP, main= "SP", col = c("red", "yellow"))
+
+# in season, in year, next year
+plot(x = list(aa_prev_year, aa_season, aa_next_year), UD = AA, main= "AA", lwd = 3,col = c("red", "yellow", "green"))
+plot(x = list(aa2_prev_year, aa2_year, aa2_next_year), UD = AA2, main= "AA2", lwd = 3,col = c("red", "yellow", "green"))
+plot(x = list(ce_prev_year, ce_year, ce_next_year), UD = CE, main= "CE", lwd = 3,col = c("red", "yellow", "green"))
+plot(x = list(rr_prev_year, rr_year, rr_next_year), UD = RR, main= "RR", lwd = 3,col = c("red", "yellow", "green"))
+plot(x = list(fl_prev_year, fl_year, fl_next_year), UD = FL, main= "FL", lwd = 3,col = c("red", "yellow", "green"))
+plot(x = list(sp_prev_year, sp_year, sp_next_year), UD = SP, main= "SP", lwd = 3,col = c("red", "yellow", "green"))
 
 ## GGPLOT
 
@@ -182,26 +386,26 @@ mean_hr_sf <- AA %>%
   filter(str_detect(row.names(.), "est")) %>% 
   rename(id = name) %>% 
   mutate(id = "aa") %>% 
-  rbind(AA2 %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "aa2")) %>% 
-  rbind(CE %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "ce")) %>% 
-  rbind(FL %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "fl")) %>% 
-  rbind(RR %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "rr")) %>% 
+  # rbind(AA2 %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "aa2")) %>% 
+  # rbind(CE %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "ce")) %>% 
+  rbind(FL %>%
+          ctmm::as.sf(level.UD = 0.95) %>%
+          filter(str_detect(row.names(.), "est")) %>%
+          rename(id = name) %>%
+          mutate(id = "fl")) %>%
+  # rbind(RR %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "rr")) %>% 
   rbind(SP %>% 
           ctmm::as.sf(level.UD = 0.95) %>% 
           filter(str_detect(row.names(.), "est")) %>% 
@@ -215,26 +419,26 @@ ci_hr_sf <- AA %>%
   filter(!str_detect(row.names(.), "est")) %>% 
   rename(id = name) %>% 
   mutate(id = "aa") %>% 
-  rbind(AA2 %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(!str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "aa2")) %>% 
-  rbind(CE %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(!str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "ce")) %>% 
-  rbind(FL %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(!str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "fl")) %>% 
-  rbind(RR %>% 
-          ctmm::as.sf(level.UD = 0.95) %>% 
-          filter(!str_detect(row.names(.), "est")) %>% 
-          rename(id = name) %>% 
-          mutate(id = "rr")) %>% 
+  # rbind(AA2 %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(!str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "aa2")) %>% 
+  # rbind(CE %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(!str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "ce")) %>% 
+  rbind(FL %>%
+          ctmm::as.sf(level.UD = 0.95) %>%
+          filter(!str_detect(row.names(.), "est")) %>%
+          rename(id = name) %>%
+          mutate(id = "fl")) %>%
+  # rbind(RR %>% 
+  #         ctmm::as.sf(level.UD = 0.95) %>% 
+  #         filter(!str_detect(row.names(.), "est")) %>% 
+  #         rename(id = name) %>% 
+  #         mutate(id = "rr")) %>% 
   rbind(SP %>% 
           ctmm::as.sf(level.UD = 0.95) %>% 
           filter(!str_detect(row.names(.), "est")) %>% 
@@ -242,97 +446,278 @@ ci_hr_sf <- AA %>%
           mutate(id = "sp")) %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# transform past data to sf
-data_past_sf <- aa_past %>% 
+# transform data in year to sf
+data_year_sf <- aa_year %>% 
   ctmm::as.sf() %>% 
   rename(id = identity) %>% 
   mutate(id = "aa") %>%
-  rbind(aa2_past %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "aa2")) %>%
-  rbind(ce_past %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "ce")) %>%
-  rbind(fl_past %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
+  # rbind(aa2_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "aa2")) %>%
+  # rbind(ce_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "ce")) %>%
+  rbind(fl_year %>%
+          ctmm::as.sf() %>%
+          rename(id = identity) %>%
           mutate(id = "fl")) %>%
-  rbind(rr_past %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "rr")) %>%
-  rbind(sp_past %>% 
+  # rbind(rr_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "rr")) %>%
+  rbind(sp_year %>% 
           ctmm::as.sf() %>% 
           rename(id = identity) %>% 
           mutate(id = "sp")) %>%
+  mutate(scale = "Within Year") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # transfrom future data to sf
-data_future_sf <- aa_future %>% 
+data_future_sf <- aa_next_year %>% 
   ctmm::as.sf() %>% 
   rename(id = identity) %>% 
   mutate(id = "aa") %>%
-  rbind(aa2_future %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "aa2")) %>%
-  rbind(ce_future %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "ce")) %>%
-  rbind(fl_future %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
+  # rbind(aa2_next_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "aa2")) %>%
+  # rbind(ce_next_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "ce")) %>%
+  rbind(fl_next_year %>%
+          ctmm::as.sf() %>%
+          rename(id = identity) %>%
           mutate(id = "fl")) %>%
-  rbind(rr_future %>% 
-          ctmm::as.sf() %>% 
-          rename(id = identity) %>% 
-          mutate(id = "rr")) %>%
-  rbind(sp_future %>% 
+  # rbind(rr_next_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "rr")) %>%
+  rbind(sp_next_year %>% 
           ctmm::as.sf() %>% 
           rename(id = identity) %>% 
           mutate(id = "sp")) %>%
+  mutate(scale = "Following Year") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+data_past_sf <- aa_prev_year %>% 
+  ctmm::as.sf() %>% 
+  rename(id = identity) %>% 
+  mutate(id = "aa") %>%
+  # rbind(aa2_prev_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "aa2")) %>%
+  # rbind(ce_prev_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "ce")) %>%
+  rbind(fl_prev_year %>%
+          ctmm::as.sf() %>%
+          rename(id = identity) %>%
+          mutate(id = "fl")) %>%
+  # rbind(rr_prev_year %>% 
+  #         ctmm::as.sf() %>% 
+  #         rename(id = identity) %>% 
+  #         mutate(id = "rr")) %>%
+  rbind(sp_prev_year %>% 
+          ctmm::as.sf() %>% 
+          rename(id = identity) %>% 
+          mutate(id = "sp")) %>%
+  mutate(scale = "Previous Year") %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# combine into one dataframe
+df_sf <- rbind(data_year_sf, data_past_sf, data_future_sf)
+aa_sf <- df_sf %>% 
+  filter(id == "aa") %>% 
+  mutate(scale = str_c("AA Data", scale, sep = " "),
+         prop_mean = ifelse(scale == "AA Data Within Year",
+                              props_df$Prop[props_df$ID=="aa_year"],
+                              ifelse(scale == "AA Data Previous Year",
+                                     props_df$Prop[props_df$ID=="aa_prev_year"],
+                                     props_df$Prop[props_df$ID=="aa_next_year"])),
+         prop_low = ifelse(scale == "AA Data Within Year",
+                           props_df$Prop_low[props_df$ID=="aa_year"],
+                           ifelse(scale == "AA Data Previous Year",
+                                  props_df$Prop_low[props_df$ID=="aa_prev_year"],
+                                  props_df$Prop_low[props_df$ID=="aa_next_year"])),
+         prop_high = ifelse(scale == "AA Data Within Year",
+                            props_df$Prop_high[props_df$ID=="aa_year"],
+                            ifelse(scale == "AA Data Previous Year",
+                                   props_df$Prop_high[props_df$ID=="aa_prev_year"],
+                                   props_df$Prop_high[props_df$ID=="aa_next_year"])),
+         prop = str_c( "Proportion Within = ", as.character(prop_mean)))
+
+sp_sf <- df_sf %>% 
+  filter(id == "sp") %>% 
+  mutate(scale = str_c("SP Data", scale, sep = " "),
+         prop_mean = ifelse(scale == "SP Data Within Year",
+                            props_df$Prop[props_df$ID=="sp_year"],
+                            ifelse(scale == "SP Data Previous Year",
+                                   props_df$Prop[props_df$ID=="sp_prev_year"],
+                                   props_df$Prop[props_df$ID=="sp_next_year"])),
+         prop_low = ifelse(scale == "SP Data Within Year",
+                           props_df$Prop_low[props_df$ID=="sp_year"],
+                           ifelse(scale == "SP Data Previous Year",
+                                  props_df$Prop_low[props_df$ID=="sp_prev_year"],
+                                  props_df$Prop_low[props_df$ID=="sp_next_year"])),
+         prop_high = ifelse(scale == "SP Data Within Year",
+                            props_df$Prop_high[props_df$ID=="sp_year"],
+                            ifelse(scale == "SP Data Previous Year",
+                                   props_df$Prop_high[props_df$ID=="sp_prev_year"],
+                                   props_df$Prop_high[props_df$ID=="sp_next_year"])),
+         prop = str_c( "Proportion Within = ", as.character(prop_mean)))
+
+fl_sf <- df_sf %>% 
+  filter(id == "fl") %>% 
+  mutate(scale = str_c("FL Data", scale, sep = " "),
+         prop_mean = ifelse(scale == "FL Data Within Year",
+                            props_df$Prop[props_df$ID=="fl_year"],
+                            ifelse(scale == "FL Data Previous Year",
+                                   props_df$Prop[props_df$ID=="fl_prev_year"],
+                                   props_df$Prop[props_df$ID=="fl_next_year"])),
+         prop_low = ifelse(scale == "FL Data Within Year",
+                           props_df$Prop_low[props_df$ID=="fl_year"],
+                           ifelse(scale == "FL Data Previous Year",
+                                  props_df$Prop_low[props_df$ID=="fl_prev_year"],
+                                  props_df$Prop_low[props_df$ID=="fl_next_year"])),
+         prop_high = ifelse(scale == "FL Data Within Year",
+                            props_df$Prop_high[props_df$ID=="fl_year"],
+                            ifelse(scale == "FL Data Previous Year",
+                                   props_df$Prop_high[props_df$ID=="fl_prev_year"],
+                                   props_df$Prop_high[props_df$ID=="fl_next_year"])),
+         prop = str_c( "Proportion Within = ", as.character(prop_mean)))
+
 
 ## ggplot
 
 # get colors
-colors <- c("future data" = "#de4968", "past data" = "#40bd72")
-labels <- c("future data", "past data")
+colors_aa <- c("AA Data Previous Year" = "#fca50a", "AA Data Within Year" = "#c13a50", "AA Data Following Year" = "#4c0c6b")
+colors_sp <- c("SP Data Previous Year" = "#fca50a", "SP Data Within Year" = "#c13a50", "SP Data Following Year" = "#4c0c6b")
+colors_fl <- c("FL Data Previous Year" = "#fca50a", "FL Data Within Year" = "#c13a50", "FL Data Following Year" = "#4c0c6b")
+labels_aa <- c("AA Data Previous Year", "AA Data Within Year", "AA Data Following Year")
+labels_sp <- c("SP Data Previous Year", "SP Data Within Year", "SP Data Following Year")
+labels_fl <- c("FL Data Previous Year", "FL Data Within Year", "FL Data Following Year")
 
-ggplot() +
-  geom_sf(data = data_future_sf, 
-          aes(color = "future data"),
+p1 <- ggplot() +
+  geom_sf(data = aa_sf, 
+          aes(color = scale),
           inherit.aes = FALSE, alpha = 1.5, shape = 1) +
-  geom_sf(data = data_past_sf, 
-          aes(color = "past data"),
-          inherit.aes = FALSE, alpha = 0.6, shape = 1) +
-  geom_sf(data = mean_hr_sf, # HR CIs
+  geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa",], # HR CIs
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
-  geom_sf(data = ci_hr_sf, # HR mean boundary
+          fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2) +
+  geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa",], # HR mean boundary
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
+  geom_text(data = aa_sf, aes(x = 677.8, y = 1163.9, label = prop), size = 6) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
-                              height = unit(4,'pt'),
+                              height = unit(10,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
-  scale_color_manual(values = colors, labels = labels, name = "") +
-  # scale_x_continuous(labels = scales::label_number(accuracy = .1)) +
-  # scale_y_continuous(labels = scales::label_number(accuracy = .1, big.mark = "")) +
-  # guides(color=guide_legend(override.aes=list(size = 8)))+
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+           xlim=c(676.200,680.500), ylim=c(1161.000, 1164.000)) +
+  scale_color_manual(values = colors_aa, labels = labels_aa, name = "") +
   labs( x = "Easting (km)", y = "Northing (km)") +
-  theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.position="bottom", 
+  theme(legend.position="none", 
         legend.title = element_blank(),
         legend.text=element_text(size=14),
-        #axis.text.x = element_text(angle=45, hjust = 1),
         axis.title = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        strip.text = element_text(size = 15)) +
-  facet_wrap(~id, nrow = 2) 
+        strip.text = element_text(size = 25),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5),
+        panel.spacing = unit(2, "lines")) +
+  facet_wrap(~factor(scale, levels = c("AA Data Previous Year", "AA Data Within Year", "AA Data Following Year"))) 
+
+p2 <- ggplot() +
+  geom_sf(data = sp_sf, 
+          aes(color = scale),
+          inherit.aes = FALSE, alpha = 1.5, shape = 1) +
+  geom_sf(data = ci_hr_sf[ci_hr_sf$id=="sp",], # HR CIs
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2) +
+  geom_sf(data = mean_hr_sf[mean_hr_sf$id=="sp",], # HR mean boundary
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
+  geom_text(data = sp_sf, aes(x = 677.3, y = 1162.4, label = prop), size = 6) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(10,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(676.250,679.000), ylim=c(1159.500, 1162.500)) +
+  scale_color_manual(values = colors_sp, labels = labels_sp, name = "") +
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme(legend.position="none", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 25),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5),
+        panel.spacing = unit(2, "lines")) +
+  facet_wrap(~factor(scale, levels = c("SP Data Previous Year", "SP Data Within Year", "SP Data Following Year"))) 
+
+p3 <- ggplot() +
+  geom_sf(data = fl_sf, 
+          aes(color = scale),
+          inherit.aes = FALSE, alpha = 1.5, shape = 1) +
+  geom_sf(data = ci_hr_sf[ci_hr_sf$id=="fl",], # HR CIs
+          inherit.aes = FALSE, 
+          fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2) +
+  geom_sf(data = mean_hr_sf[mean_hr_sf$id=="fl",], # HR mean boundary
+          inherit.aes = FALSE, 
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
+  geom_text(data = fl_sf, aes(x = 677.2, y = 1166.8, label = prop), size = 6) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(10,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(675.500,680.000), ylim=c(1163.000, 1167.000)) +
+  scale_color_manual(values = colors_fl, labels = labels_fl, name = "") +
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme(legend.position="none", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 25),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5),
+        panel.spacing = unit(2, "lines")) +
+  facet_wrap(~factor(scale, levels = c("FL Data Previous Year", "FL Data Within Year", "FL Data Following Year"))) 
+
+p4 <- plot_grid(p1, p2, p3, ncol = 1, align = "hv") & theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+# Save plot
+file.name <- paste0("complete_seg_validation_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name),
+       plot = p4,
+       width = 4800,
+       height = 4200,
+       units = "px")
