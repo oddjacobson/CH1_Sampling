@@ -721,3 +721,318 @@ ggsave(here::here("Figures", file.name),
        width = 4800,
        height = 4200,
        units = "px")
+
+
+
+#.........................................
+## FINAL ANALYSIS -----------
+#
+
+UDs_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_AKDEs.rds")
+UDs_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_AKDEs_seasonal.rds")
+DATA_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA.rds")
+DATA_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA_seasonal.rds")
+
+aa_annual <- UDs_annual[["aa_2014"]]
+aa_wet <- UDs_seasonal[["aa_wet_2014"]]
+aa_dry <- UDs_seasonal[["aa_dry_2014"]]
+
+par(mfrow = c(2,3))
+plot(DATA_annual[["aa_2013"]], UD =aa_annual, col.grid = NA)
+plot(DATA_annual[["aa_2015"]], UD =aa_annual, col.grid = NA)
+plot(DATA_annual[["aa_2016"]], UD =aa_annual, col.grid = NA)
+plot(DATA_annual[["aa_2013"]], 
+     UD =list(aa_dry, aa_wet), 
+     col.grid = NA , col.DF = c("red", "blue"))
+plot(DATA_annual[["aa_2015"]], 
+     UD =list(aa_dry, aa_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+plot(DATA_annual[["aa_2016"]], 
+     UD =list(aa_dry, aa_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+
+par(mfrow = c(2,3))
+rr_annual <- UDs_annual[["rr_2012"]]
+rr_wet <- UDs_seasonal[["rr_wet_2012"]]
+rr_dry <- UDs_seasonal[["rr_dry_2012"]]
+
+plot(DATA_annual[["rr_2011"]], UD =rr_annual, col.grid = NA)
+plot(DATA_annual[["rr_2013"]], UD =rr_annual, col.grid = NA)
+plot(DATA_annual[["rr_2014"]], UD =rr_annual, col.grid = NA)
+plot(DATA_annual[["rr_2011"]], 
+     UD =list(rr_dry, rr_wet), 
+     col.grid = NA , col.DF = c("red", "blue"))
+plot(DATA_annual[["rr_2013"]], 
+     UD =list(rr_dry, rr_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+plot(DATA_annual[["rr_2014"]] , 
+     UD =list(rr_dry, rr_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+
+
+ce_wet <- UDs_seasonal[["ce_wet_2015"]]
+ce_dry <- UDs_seasonal[["ce_dry_2015"]]
+
+par(mfrow = c(2,3))
+plot(DATA_annual[["ce_2014"]], UD =ce_annual, col.grid = NA)
+plot(DATA_annual[["ce_2016"]], UD =ce_annual, col.grid = NA)
+plot(DATA_annual[["ce_2017"]], UD =ce_annual, col.grid = NA)
+plot(DATA_annual[["ce_2014"]], 
+     UD =list(ce_dry, ce_wet), 
+     col.grid = NA , col.DF = c("red", "blue"))
+plot(DATA_annual[["ce_2016"]], 
+     UD =list(ce_dry, ce_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+plot(DATA_annual[["ce_2017"]], 
+     UD =list(ce_dry, ce_wet), 
+     col.grid = NA, col.DF = c("red", "blue"))
+
+# put into list
+UD_list <- list(aa_annual,aa_wet,aa_dry, rr_annual, rr_wet, rr_dry)
+names(UD_list) <- c("aa_annual", "aa_wet", "aa_dry", "rr_annual", "rr_wet", "rr_dry")
+
+data_names <- c("aa_2013","aa_2015","aa_2016","rr_2011", "rr_2013" , "rr_2014" )
+DATA_list <- DATA_annual[data_names]
+
+#................................
+##
+## CALCULATE PROPORTIONS
+#
+
+aa_dlist <- DATA_list[1:3]
+names(aa_dlist) <- c("aa_prev_year", "aa_next_year", "aa_next_2year")
+
+rr_dlist <- DATA_list[4:6]
+names(rr_dlist) <- c("rr_prev_year", "rr_next_year", "rr_next_2year")
+
+#.....................................
+#
+# Calculate proportion of points within HR for AA and SP
+AAt <- AAp <-  AAp_low <- AAp_high <- AAf <-  AAf_low <- AAf_high <- list()
+for(i in 1:length(aa_dlist)){
+  AAt[[i]] <- SpatialPoints.telemetry(aa_dlist[i]) %over% SpatialPolygonsDataFrame.UD(UD_list[[1]] ,level.UD=0.95) %>% 
+    table(useNA = "always") %>% # keep number of points that fell outside upper CI
+    data.frame()  %>% 
+    mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
+           Freq = Freq); 
+  AAf[[i]] <- AAt[[i]]$Freq[1] + AAt[[i]]$Freq[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  AAf_low[[i]] <- AAt[[i]]$Freq[3]; # proportion only within lower bound
+  AAf_high[[i]] <- AAt[[i]]$Freq[1] + AAt[[i]]$Freq[2] + AAt[[i]]$Freq[3]; # all combined to get upper bound
+  AAp[[i]] <- AAt[[i]]$Prop[1] + AAt[[i]]$Prop[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  AAp_low[[i]] <- AAt[[i]]$Prop[3]; # proportion only within lower bound
+  AAp_high[[i]] <- AAt[[i]]$Prop[1] + AAt[[i]]$Prop[2] + AAt[[i]]$Prop[3]
+}
+names(AAt) <- names(AAp_low) <- names(AAp_high) <- names(AAp) <- names(AAf_low) <- names(AAf_high) <- names(AAf) <- names(aa_dlist)
+
+# rr
+RRt <- RRp <-  RRp_low <- RRp_high <- RRf <-  RRf_low <- RRf_high <- list()
+for(i in 1:length(rr_dlist)){
+  RRt[[i]] <- SpatialPoints.telemetry(rr_dlist[i]) %over% SpatialPolygonsDataFrame.UD(UD_list[[4]] ,level.UD=0.95) %>% 
+    table(useNA = "always") %>% # keep number of points that fell outside upper CI
+    data.frame()  %>% 
+    mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
+           Freq = Freq); 
+  RRf[[i]] <- RRt[[i]]$Freq[1] + RRt[[i]]$Freq[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  RRf_low[[i]] <- RRt[[i]]$Freq[3]; # proportion only within lower bound
+  RRf_high[[i]] <- RRt[[i]]$Freq[1] + RRt[[i]]$Freq[2] + RRt[[i]]$Freq[3]; # all combined to get upper bound
+  RRp[[i]] <- RRt[[i]]$Prop[1] + RRt[[i]]$Prop[3]; # takes the proportion that fell within lower CI plus proportion that fell between mean and lower
+  RRp_low[[i]] <- RRt[[i]]$Prop[3]; # proportion only within lower bound
+  RRp_high[[i]] <- RRt[[i]]$Prop[1] + RRt[[i]]$Prop[2] + RRt[[i]]$Prop[3]
+}
+names(RRt) <- names(RRp_low) <- names(RRp_high) <- names(RRp) <- names(RRf_low) <- names(RRf_high) <- names(RRf) <- names(rr_dlist)
+
+# put in dataframe
+props_df <- tibble(ID = names(aa_dlist),
+                   Group = "AA",
+                   Prop = as.numeric(unlist(AAp)),
+                   Prop_low = as.numeric(unlist(AAp_low)),
+                   Prop_high = as.numeric(unlist(AAp_high)),
+                   Freq = as.numeric(unlist(AAf)),
+                   Freq_low = as.numeric(unlist(AAf_low)),
+                   Freq_high = as.numeric(unlist(AAf_high))) %>%
+  rbind(tibble(ID = names(rr_dlist),
+               Group = "RR",
+               Prop = as.numeric(unlist(RRp)),
+               Prop_low = as.numeric(unlist(RRp_low)),
+               Prop_high = as.numeric(unlist(RRp_high)),
+               Freq = as.numeric(unlist(RRf)),
+               Freq_low = as.numeric(unlist(RRf_low)),
+               Freq_high = as.numeric(unlist(RRf_high)))) 
+
+### convert to sf objects for plotting
+# transform mean boundries to sf
+mean_hr_sf <- UD_list %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  filter(str_detect(row.names(.), "est")) %>% 
+  rename(id = name) %>%
+  mutate(id = gsub( " .*$", "", id ),
+         group = str_sub (id, 1,2)) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# transform confidence intervals to sf
+ci_hr_sf <- UD_list %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  filter(!str_detect(row.names(.), "est")) %>% 
+  rename(id = name) %>%
+  mutate(id = gsub( " .*$", "", id ),
+         group = str_sub (id, 1,2)) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# transform data to sf
+data_sf <- DATA_list %>% 
+  purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
+  reduce(rbind) %>% 
+  rename(id = identity) %>%
+  mutate(group = str_sub (id, 1,2),
+         season = ifelse(month(timestamp) %in% c(1:6), "Dry Season", "Wet Season")) %>% 
+  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# seperate groups and add scale column
+aa_data_sf <- data_sf %>%
+  filter(group == "aa") %>% 
+  mutate(scale = ifelse(year(timestamp) == 2013,
+                        "AA Data Previous Year",
+                        ifelse(year(timestamp) == 2015,
+                               "AA Data Following Year",
+                               "AA Data 2 Years After")),
+         prop_mean = ifelse(scale == "AA Data Previous Year",
+                            props_df$Prop[props_df$ID=="aa_prev_year"],
+                            ifelse(scale == "AA Data Following Year",
+                                   props_df$Prop[props_df$ID=="aa_next_year"],
+                                   props_df$Prop[props_df$ID=="aa_next_2year"])),
+         prop = str_c( "Prop = ", as.character(prop_mean)))
+
+rr_data_sf <- data_sf %>%
+  filter(group == "rr") %>% 
+  mutate(scale = ifelse(year(timestamp) == 2011,
+                        "RR Data Previous Year",
+                        ifelse(year(timestamp) == 2013,
+                               "RR Data Following Year",
+                               "RR Data 2 Years After")),
+         prop_mean = ifelse(scale == "RR Data Previous Year",
+                            props_df$Prop[props_df$ID=="rr_prev_year"],
+                            ifelse(scale == "RR Data Following Year",
+                                   props_df$Prop[props_df$ID=="rr_next_year"],
+                                   props_df$Prop[props_df$ID=="rr_next_2year"])),
+         prop = str_c( "Prop = ", as.character(prop_mean)))
+
+colors <- c("Wet Season" = "#0072b2", "Dry Season" = "#d55e00")
+
+# ggplot
+p1 <- ggplot() +
+  geom_sf(data = aa_data_sf, 
+          aes(color = season),
+          inherit.aes = FALSE, alpha = 1.5, shape = 1) +
+  scale_color_manual(values = colors, labels = labels, name = "") +
+  # geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa_wet_2014",], # HR CIs
+  #         inherit.aes = FALSE, 
+  #         fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2, color = "#0072b2") +
+  # geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa_dry_2014",], # HR CIs
+  #         inherit.aes = FALSE, 
+  #         fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2, color = "#d55e00") +
+  geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa_2014",], # HR CIs
+          inherit.aes = FALSE,
+          fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2) +
+  # geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_wet_2014",], # HR mean boundary
+  #         inherit.aes = FALSE, 
+  #         fill =NA , alpha = 0.06, linewidth = 0.8, color = "#0072b2") +
+  # geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_dry_2014",], # HR mean boundary
+  #         inherit.aes = FALSE, 
+  #         fill =NA , alpha = 0.06, linewidth = 0.8, color = "#d55e00") +
+  geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_2014",], # HR mean boundary
+          inherit.aes = FALSE,
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
+  geom_text(data = aa_data_sf, aes(x = 679.8, y = 1161.0, label = prop), size = 4) +
+  ggspatial::annotation_scale(location = "bl",
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+           xlim=c(676.200,680.500), ylim=c(1161.000, 1164.000)) +
+  # coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+  #          xlim=c(676.500,680.100), ylim=c(1161.000, 1164.000)) +
+  #scale_color_manual(values = colors, labels = labels) +
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme(legend.position="none", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        legend.key=element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 12),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5)) +
+  guides(color = guide_legend(override.aes = list(size=5))) +
+  facet_wrap(~factor(scale, levels = c("AA Data Previous Year", "AA Data Following Year", "AA Data 2 Years After")))
+
+p2 <- ggplot() +
+  geom_sf(data = rr_data_sf, 
+          aes(color = season),
+          inherit.aes = FALSE, alpha = 1.5, shape = 1) +
+  scale_color_manual(values = colors, name = "") +
+  # geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa_wet_2014",], # HR CIs
+  #         inherit.aes = FALSE, 
+  #         fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2, color = "#0072b2") +
+  # geom_sf(data = ci_hr_sf[ci_hr_sf$id=="aa_dry_2014",], # HR CIs
+  #         inherit.aes = FALSE, 
+  #         fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2, color = "#d55e00") +
+  geom_sf(data = ci_hr_sf[ci_hr_sf$id=="rr_2012",], # HR CIs
+          inherit.aes = FALSE,
+          fill = NA, linetype = "dotted", alpha = 0.8, linewidth = 0.2) +
+  # geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_wet_2014",], # HR mean boundary
+  #         inherit.aes = FALSE, 
+  #         fill =NA , alpha = 0.06, linewidth = 0.8, color = "#0072b2") +
+  # geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_dry_2014",], # HR mean boundary
+  #         inherit.aes = FALSE, 
+  #         fill =NA , alpha = 0.06, linewidth = 0.8, color = "#d55e00") +
+  geom_sf(data = mean_hr_sf[mean_hr_sf$id=="rr_2012",], # HR mean boundary
+          inherit.aes = FALSE,
+          fill =NA , alpha = 0.06, linewidth = 0.8) +
+  geom_text(data = rr_data_sf, aes(x = 679.8, y = 1159.9, label = prop), size = 4) +
+  ggspatial::annotation_scale(location = "bl", 
+                              width_hint = 0.3,
+                              height = unit(4,'pt'),
+                              style = 'ticks') +
+  # coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+  #          xlim=c(677.000,680.000), ylim=c(1160.000, 1163.500)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+          xlim=c(676.500,680.500), ylim=c(1159.900, 1162.750)) +
+  labs( x = "Easting (km)", y = "Northing (km)") +
+  theme(legend.position="bottom", 
+        legend.title = element_blank(),
+        legend.text=element_text(size=14),
+        legend.key=element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.text = element_text(size = 12),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
+        strip.background = element_rect(color = "black", linewidth = 0.5)) +
+  guides(color = guide_legend(override.aes = list(size=5))) +
+  facet_wrap(~factor(scale, levels = c("RR Data Previous Year", "RR Data Following Year", "RR Data 2 Years After")))
+
+
+p3 <- egg::ggarrange(p1,p2)
+
+# Save plot
+file.name <- paste0("stationarity_plots",
+                    format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name),
+       plot = p3,
+       width = 3000,
+       height = 2000,
+       units = "px")
