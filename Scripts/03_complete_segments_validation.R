@@ -1036,3 +1036,34 @@ ggsave(here::here("Figures", file.name),
        width = 3000,
        height = 2000,
        units = "px")
+
+####
+# Variogram
+#
+
+# read in data for each group 
+data <- readRDS("Data/30min_trkpts_formatted") %>% 
+  mutate(group = str_sub(individual.local.identifier, 1, 2))
+
+aa_data_long <- data %>% 
+  filter(group == "AA",
+         year %in% c("2013","2014", "2015", "2016")) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+rr_data_long <- data %>% 
+  filter(group == "RR",
+         year %in% c("2011","2012", "2013", "2014")) %>% 
+  dplyr::select(-individual.local.identifier) %>%
+  rename(individual.local.indentifier = group) %>%
+  arrange(timestamp) %>%
+  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+SVF_aa <- variogram(aa_data_long, dt = c(1,40) %#% "hour") 
+SVF_rr <- variogram(rr_data_long, dt = c(1,50) %#% "hour") 
+
+par(mfrow= c(1,2))
+plot(SVF_aa, main = "AA", fraction = 1)
+plot(SVF_rr, main = "RR", fraction = 1)

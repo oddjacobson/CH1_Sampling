@@ -354,16 +354,16 @@ p2 <- ggplot(data = post_loc_draws,
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
-  annotate("segment", x = 1.15, xend = 1.15, y = -Inf, yend = 0.95,
-               linetype = "dashed",
-               color = "#370499",
-               size = 1,
-               alpha = 0.5) +
-  annotate("segment", x = 0.9, xend = 0.9, y = -Inf, yend = 0.95,
-               linetype = "dashed",
-               color = "#feb82c",
-               size = 1,
-               alpha = 0.5) +
+  # annotate("segment", x = 1.15, xend = 1.15, y = -Inf, yend = 0.95,
+  #              linetype = "dashed",
+  #              color = "#370499",
+  #              size = 1,
+  #              alpha = 0.5) +
+  # annotate("segment", x = 0.9, xend = 0.9, y = -Inf, yend = 0.95,
+  #              linetype = "dashed",
+  #              color = "#feb82c",
+  #              size = 1,
+  #              alpha = 0.5) +
   scale_fill_viridis_d(option = "plasma", end = 0.8) +
   scale_color_viridis_d(option = "plasma", end = 0.8) + 
   scale_x_continuous(limits = c(-1.4,2.5), 
@@ -542,16 +542,16 @@ p3 <- ggplot(data = post_weeks_draws,
              linetype = "dashed",
              color = "black", 
              size = 1, alpha = 0.5) +
-  annotate("segment", x = 1.4, xend = 1.4, y = -Inf, yend = 0.95,
-               linetype = "dashed",
-               color = "#feb82c",
-               size = 1,
-               alpha = 0.5) +
-  annotate("segment", x = 0.35, xend = 0.35, y = -Inf, yend = 0.95,
-               linetype = "dashed",
-               color = "#370499",
-               size = 1,
-               alpha = 0.5) +
+  # annotate("segment", x = 1.4, xend = 1.4, y = -Inf, yend = 0.95,
+  #              linetype = "dashed",
+  #              color = "#feb82c",
+  #              size = 1,
+  #              alpha = 0.5) +
+  # annotate("segment", x = 0.35, xend = 0.35, y = -Inf, yend = 0.95,
+  #              linetype = "dashed",
+  #              color = "#370499",
+  #              size = 1,
+  #              alpha = 0.5) +
   scale_fill_viridis_d(option = "plasma", end = 0.8) +
   scale_color_viridis_d(option = "plasma", end = 0.8) + 
   scale_x_continuous(limits = c(-1.4,2.5), 
