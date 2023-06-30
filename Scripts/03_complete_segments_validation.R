@@ -22,6 +22,26 @@ SP <- readRDS("Intermediate/ctmm/AKDE_sp.rds")[[1]]
 data <- readRDS("Data/30min_trkpts_formatted") %>% 
   mutate(group = str_sub(individual.local.identifier, 1, 2))
 
+# calculate number of hours in dataset by group then add together (because some groups can be tracked simultaneously)
+# Sort the data by timestamp within each group
+data <- data %>% 
+  group_by(group) %>%  
+  arrange(timestamp) %>% 
+  mutate(time_diff = c(0, diff(timestamp)))
+
+# Define the maximum allowed gap (e.g., 30 minutes)
+max_gap <- 30 * 60  # 30 minutes converted to seconds
+
+# Calculate the total number of seconds within allowed gaps for each group
+data_summary <- data %>% 
+  group_by(group) %>%  # Replace 'group_column' with the actual column name for grouping
+  summarise(total_days = length(unique(date(timestamp)))) %>% 
+  mutate(approx_hours = total_days * 7)
+
+sum(data_summary$approx_hours)
+
+
+
 # double check CE weird points are real -- look in database
 ce <- data %>% 
   filter(group == "CE") %>% 
@@ -893,13 +913,13 @@ data_sf <- DATA_list %>%
 aa_data_sf <- data_sf %>%
   filter(group == "aa") %>% 
   mutate(scale = ifelse(year(timestamp) == 2013,
-                        "AA Data Previous Year",
+                        "AA Data Previous Year (2013)",
                         ifelse(year(timestamp) == 2015,
-                               "AA Data Following Year",
-                               "AA Data 2 Years After")),
-         prop_mean = ifelse(scale == "AA Data Previous Year",
+                               "AA Data Following Year (2015)",
+                               "AA Data 2 Years After (2016)")),
+         prop_mean = ifelse(scale == "AA Data Previous Year (2013)",
                             props_df$Prop[props_df$ID=="aa_prev_year"],
-                            ifelse(scale == "AA Data Following Year",
+                            ifelse(scale == "AA Data Following Year (2015)",
                                    props_df$Prop[props_df$ID=="aa_next_year"],
                                    props_df$Prop[props_df$ID=="aa_next_2year"])),
          prop = str_c( "Prop = ", as.character(prop_mean)))
@@ -907,13 +927,13 @@ aa_data_sf <- data_sf %>%
 rr_data_sf <- data_sf %>%
   filter(group == "rr") %>% 
   mutate(scale = ifelse(year(timestamp) == 2011,
-                        "RR Data Previous Year",
+                        "RR Data Previous Year (2011)",
                         ifelse(year(timestamp) == 2013,
-                               "RR Data Following Year",
-                               "RR Data 2 Years After")),
-         prop_mean = ifelse(scale == "RR Data Previous Year",
+                               "RR Data Following Year (2013)",
+                               "RR Data 2 Years After (2014)")),
+         prop_mean = ifelse(scale == "RR Data Previous Year (2011)",
                             props_df$Prop[props_df$ID=="rr_prev_year"],
-                            ifelse(scale == "RR Data Following Year",
+                            ifelse(scale == "RR Data Following Year (2013)",
                                    props_df$Prop[props_df$ID=="rr_next_year"],
                                    props_df$Prop[props_df$ID=="rr_next_2year"])),
          prop = str_c( "Prop = ", as.character(prop_mean)))
@@ -971,7 +991,7 @@ p1 <- ggplot() +
         panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
         strip.background = element_rect(color = "black", linewidth = 0.5)) +
   guides(color = guide_legend(override.aes = list(size=5))) +
-  facet_wrap(~factor(scale, levels = c("AA Data Previous Year", "AA Data Following Year", "AA Data 2 Years After")))
+  facet_wrap(~factor(scale, levels = c("AA Data Previous Year (2013)", "AA Data Following Year (2015)", "AA Data 2 Years After (2016)")))
 
 p2 <- ggplot() +
   geom_sf(data = rr_data_sf, 
@@ -1022,7 +1042,7 @@ p2 <- ggplot() +
         panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
         strip.background = element_rect(color = "black", linewidth = 0.5)) +
   guides(color = guide_legend(override.aes = list(size=5))) +
-  facet_wrap(~factor(scale, levels = c("RR Data Previous Year", "RR Data Following Year", "RR Data 2 Years After")))
+  facet_wrap(~factor(scale, levels = c("RR Data Previous Year (2011)", "RR Data Following Year (2013)", "RR Data 2 Years After (2014)")))
 
 
 p3 <- egg::ggarrange(p1,p2)
@@ -1055,15 +1075,28 @@ aa_data_long <- data %>%
 
 rr_data_long <- data %>% 
   filter(group == "RR",
-         year %in% c("2011","2012", "2013", "2014")) %>% 
+         year %in% c("2012","2014")) %>% 
   dplyr::select(-individual.local.identifier) %>%
   rename(individual.local.indentifier = group) %>%
   arrange(timestamp) %>%
   as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
+# variograms
 SVF_aa <- variogram(aa_data_long, dt = c(1,40) %#% "hour") 
 SVF_rr <- variogram(rr_data_long, dt = c(1,50) %#% "hour") 
 
 par(mfrow= c(1,2))
-plot(SVF_aa, main = "AA", fraction = 1)
+plot(SVF_aa, main = "AA", fraction = 0.3)
 plot(SVF_rr, main = "RR", fraction = 1)
+
+# get starting values for models
+GUESS_aa <- ctmm.guess(aa_data_long,interactive=FALSE, variogram = SVF_aa)
+GUESS_rr <- ctmm.guess(rr_data_long,interactive=FALSE, variogram = SVF_rr)
+
+# fit models and select top one, trace = 2 allows you to see progress
+FIT_aa <- ctmm.select(aa_data_long,GUESS_aa,trace=2)
+FIT_rr <- ctmm.select(rr_data_long,GUESS_rr,trace=2)
+
+# summaries
+summary(FIT_aa)
+summary(FIT_rr)
