@@ -1,0 +1,236 @@
+---
+title: "Effective Sample Size Analysis"
+author: "Odd Jacobson"
+date: "2023-01-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document covers the analysis on comparing the estimated number of HR crosinggs with the "true" number of HR crossing which is estimated using the HR crossing time from the complete segments.
+
+Load packages
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(janitor)
+library(gt)
+library(patchwork)
+library(brms)
+```
+
+
+### Get data
+
+```{r}
+
+# get "true" data from complete segments
+hr_true <- readRDS("Intermediate/DF_True_HRs.rds") %>%
+  clean_names() %>% 
+  rename(tau_true = tau,
+         tau_true_high = tau_high,
+         tau_true_low = tau_low) %>% 
+  dplyr::select(group, tau_true, tau_true_high, tau_true_low)
+
+# get data frame 
+df <- readRDS("Intermediate/DF_Performance.rds") %>% 
+  clean_names() %>% 
+  rename(type = clumped_or_random) %>% 
+  merge(hr_true, by = "group") %>% 
+  mutate(locations = num_points,
+         group = factor(group),
+         type = factor(ifelse(type == "S", "Spread", "Concentrated")),
+         # id = gsub("R", "S", id),
+         hours = locations/2, # sampling rate at 30min so hours is that times 2 (number of hours actually sampled)
+         xings_sampled_low = hours/tau_high, 
+         xings_sampled = hours/tau, # number of xings during actual sampling time
+         xings_sampled_high = hours/tau_low,
+         xings_true = hours/tau_true, # xings_true is number of xings calculated using tau from complete segments
+         xings_true_high = hours/tau_true_low,
+         xings_true_low = hours/tau_true_high,
+         xings_diff = xings_sampled - xings_true,
+         day_section = str_sub(id, 2),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
+         id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
+  dplyr::select(group,id, type, hours,xings_sampled,xings_sampled_low, xings_sampled_high, xings_true, xings_true_high, xings_true_low, xings_diff, tau_true, tau, day_section, num_points, num_unidays) 
+
+# add the following:
+
+ # mutate(id = ifelse(id == "C1", "C30", 
+ #                     ifelse(id == "C2", "C20", 
+ #                            ifelse(id == "C3", "C10", 
+ #                                   ifelse(id == "C4", "C6", 
+ #                                          ifelse(id == "C5", "C3",
+ #                                                 ifelse)))))) %>% ...
+```
+
+### Table
+
+```{r}
+gt_table <- df %>% 
+  dplyr::select(group, id, hours, tau, tau_true, xings_sampled, xings_true, xings_diff) %>%
+  mutate(tau_diff = tau - tau_true) %>%
+  relocate(tau_diff, .after = tau_true) %>% 
+  mutate_if(is.numeric, round, digits = 2) %>% 
+  gt(groupname_col = "group", rowname_col = "id")
+
+gt_table %>% 
+ summary_rows(
+  columns = c("xings_sampled", "xings_true", "xings_diff"), 
+  fns = list(
+   Sum = ~sum(.),
+   Average = ~mean(.),
+   "Standard Deviation" = ~sd(.)
+  )
+ )
+```
+
+
+### Make plot
+
+the code for this is very long and confusing -- sorry
+
+```{r, warning=FALSE, message=FALSE, fig.height=9, fig.width=13}
+# set aesthetics for key
+colors <- c("Spread" = "#fca636", "Concentrated" = "#0d0887")
+linetype <- c("True" = "solid", "Estimate" = "dashed")
+shape <- c("True" = 19, "Estimate" = 1)
+
+# sperate dataframes so that key can look correct
+concentrated <- df %>% filter(type == "Concentrated")
+spread <- df %>% filter(type == "Spread")
+
+# ridiculously long code for plot to make key look correct
+p1 <- ggplot(data=df, aes(x = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")))) + 
+  geom_point(data = concentrated,
+             aes(y = xings_sampled, color = "Concentrated", shape = "Estimate"),size = 2, 
+             stat="identity", position=position_nudge(x = 0.1)) + 
+  geom_point(data = spread, 
+             aes(y = xings_sampled, color = "Spread", shape = "Estimate"),size = 2, 
+             stat="identity", position=position_nudge(x = 0.1)) +
+  geom_point(data = concentrated,
+             aes(y = xings_true, color = "Concentrated", shape = "True"), size = 2, 
+             stat="identity", position=position_nudge(x = -0.1)) +
+  geom_point(data = spread,
+             aes(y = xings_true, color = "Spread", shape = "True"), size = 2, 
+             stat="identity", position=position_nudge(x = -0.1)) +
+  geom_linerange(data = concentrated, 
+                 aes(ymax=xings_sampled_high,ymin=xings_sampled_low, color = "Concentrated", linetype = "Estimate"),
+                 position=position_nudge(0.1),width=0.25) +
+  geom_linerange(data = spread, 
+                 aes(ymax=xings_sampled_high,ymin=xings_sampled_low, color = "Spread", linetype = "Estimate"),
+                 position=position_nudge(0.1),width=0.25) +
+  geom_linerange(data = concentrated, 
+                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Concentrated", linetype = "True"), 
+                 position=position_nudge(-0.1),width=0.25) +
+  geom_linerange(data = spread, 
+                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Spread", linetype = "True"), 
+                 position=position_nudge(-0.1),width=0.25) +
+  scale_color_manual(values = colors) +
+  scale_shape_manual(values = shape) +
+  scale_linetype_manual(values = linetype) +
+  scale_x_discrete(drop = FALSE) +
+  labs(color = names(colors), linetype = names(linetype), shape = names(shape)) +
+  guides(color=guide_legend(override.aes=list(shape=15, size = 5, linetype = 0)))+
+  labs(y = "Effective Sample Size", 
+       x = "Sampling Regime ID") +
+  theme_bw(base_family = "ArcherPro Book") +
+  # geom_rect(data = subset(df, group == "CE"),
+  #           aes(size = 1.5),
+  #           fill = NA, colour = "yellow", xmin = -Inf,xmax = Inf,
+  #           ymin = -Inf,ymax = Inf,
+  #           show.legend = FALSE) +
+  facet_wrap(~group) +
+  theme_bw(base_family = "ArcherPro Book") +
+  theme(legend.title = element_blank(), legend.position = "bottom",
+        axis.text.x = element_text(size = 12, angle = 45, vjust = 0.7),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 20),
+        #axis.title.y = element_text(size = 15, vjust = -15),
+        strip.text = element_text(size = 15), # size of facet wrap title
+        legend.key.size = unit(1, 'cm'), #change legend key size
+        legend.key.height = unit(1, 'cm'), #change legend key height
+        legend.key.width = unit(1, 'cm'), #change legend key width
+        legend.text = element_text(size=13),
+        plot.title = element_text(size = 20),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) 
+
+p1
+```
+
+```{r, include=FALSE}
+# Save plot
+file.name.crossings <- paste0("DOF_plots_",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.crossings),
+       plot = p1,
+       width = 3400,
+       height = 2200,
+       units = "px")
+```
+
+```{r, eval=FALSE, include = FALSE}
+
+# get summary stats
+mean(df$xings_true[df$type=="Spread"])
+mean(df$xings_true[df$type=="Concentrated"])
+sd(df$xings_true[df$type=="Spread"])
+sd(df$xings_true[df$type=="Concentrated"])
+
+# plot difference between true and estimated
+p2 <- ggplot(data = df,
+       aes(x = type, y = xings_diff)) +
+  geom_violin(aes(color = type, fill = type), 
+              alpha = 0.4)  + 
+  stat_summary(fun = "mean",
+               geom = "point",
+               aes(color = type),
+               size = 2) +
+  scale_fill_viridis_d(option = "plasma", end = 0.8) +
+  scale_color_viridis_d(option = "plasma", end = 0.8) +
+  labs(y = "Difference Between 'Estimated' and 'True' Effective Sample Size", 
+       title = "A") +
+  theme_bw() + 
+  theme(axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        plot.title = element_text(size = 20)) +
+  coord_flip() + 
+  #facet_wrap(~day_section) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             color = "black", 
+             size = 1, alpha = 0.5) 
+
+p2
+```
+
+```{r, evaluate = FALSE, include=FALSE}
+
+p3 <- p2/p1
+
+# Save plot
+file.name.crossings <- paste0("DOF_plots_combined",
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+
+ggsave(here::here("Figures", file.name.crossings),
+       plot = p3,
+       width = 3000,
+       height = 3200,
+       units = "px")
+```

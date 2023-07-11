@@ -57,21 +57,19 @@ options(mc.cores = parallel::detectCores())
 
 ```{r, include = FALSE, eval = FALSE}
 # read in results from performance calculations
-df <- readRDS("Intermediate/ctmm/DF_Performance.rds") %>% 
+df <- readRDS("Intermediate/DF_Performance.rds") %>% 
   clean_names() %>% 
   rename(type = clumped_or_random,
          weeks = num_uniweeks,
-         locations = num_points,
-         overlap = overlap_mean) %>% 
+         locations = num_points) %>% 
   mutate(group = factor(group),
-         type = factor(ifelse(type == "R", "spread", "concentrated")),
-         id = gsub("R", "S", id),
+         type = factor(ifelse(type == "S", "spread", "concentrated")),
+         id = factor(id),
          weeks_std = (weeks - mean(weeks))/sd(weeks),
          locations_std = (locations - mean(locations))/sd(locations),
          xings_std = (xings - mean(xings))/sd(xings),
-         raw_locs_std = (raw_locs - mean(raw_locs))/sd(raw_locs),
-         hours = locations*2) %>% 
-  dplyr::select(group,id,prop,freq,total_points,overlap,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, raw_locs_std, raw_locs, type, hours, tau_low, tau, tau_high)
+         hours = locations/2) %>% 
+  dplyr::select(group,id,prop,freq,total_points,hr_area,weeks,locations, weeks_std,locations_std, xings, xings_std, type, hours, tau_low, tau, tau_high)
 ```
 
 
@@ -968,31 +966,4 @@ ggsave(here::here("Figures", file.name.model.slopes),
        units = "px")
 ```
 
-# Comparing Absolute Versus Effective Sample Size
 
-```{r}
-
-# Format data
-
-# get "true" data from complete segments
-hr_true <- readRDS("Intermediate/ctmm/DF_True_HRs.rds") %>%
-  clean_names() %>% 
-  rename(tau_true = tau,
-         tau_true_high = tau_high,
-         tau_true_low = tau_low) %>% 
-  dplyr::select(group, tau_true, tau_true_high, tau_true_low)
-
-# get data frame 
-df2 <- readRDS("Intermediate/ctmm/DF_Performance.rds") %>% 
-  clean_names() %>% 
-  rename(type = clumped_or_random) %>% 
-  merge(hr_true, by = "group") %>% 
-  mutate(locations = num_points,
-         group = factor(group),
-         type = factor(ifelse(type == "R", "spread", "concentrated")),
-         id = gsub("R", "S", id),
-         hours = locations*2, # sampling rate at 30min so hours is that times 2 (number of hours actually sampled)
-         xings_true = hours/tau_true, # xings_true is number of xings calculated using tau from complete segments
-         xings_true_std = (xings_true - mean(xings_true))/sd(xings_true)) %>% 
-  dplyr::select(group,id, type, xings_true, xings_true_std, freq, total_points,prop) 
-```

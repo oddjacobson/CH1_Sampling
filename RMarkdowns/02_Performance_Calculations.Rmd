@@ -29,24 +29,24 @@ library(sp)
 
 ```{r, eval=FALSE}
 # read in data, fits, and akdes
-AA <- readRDS("../Intermediate/DATA_aa.rds")
-CE <- readRDS("../Intermediate/DATA_ce.rds")
-RR <- readRDS("../Intermediate/DATA_rr.rds")
-AA2 <- readRDS("../Intermediate/DATA_aa2.rds")
-SP <- readRDS("../Intermediate/DATA_sp.rds")
-FL <- readRDS("../Intermediate/DATA_fl.rds")
-FITSa <-readRDS("../Intermediate/FITS_aa.rds")
-FITSc <- readRDS("../Intermediate/FITS_ce.rds")
-FITSr <- readRDS("../Intermediate/FITS_rr.rds")
-FITSa2 <- readRDS("../Intermediate/FITS_aa2.rds")
-FITSs <- readRDS("../Intermediate/FITS_sp.rds")
-FITSf <- readRDS("../Intermediate/FITS_fl.rds")
-AKDEa <- readRDS("../Intermediate/AKDE_aa.rds")
-AKDEc <- readRDS("../Intermediate/AKDE_ce.rds")
-AKDEr <- readRDS("../Intermediate/AKDE_rr.rds")
-AKDEa2 <- readRDS("../Intermediate/AKDE_aa2.rds")
-AKDEs <- readRDS("../Intermediate/AKDE_sp.rds")
-AKDEf <- readRDS("../Intermediate/AKDE_fl.rds")
+AA <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds")
+CE <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds")
+RR <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds")
+AA2 <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds")
+SP <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds")
+FL <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds")
+FITSa <-readRDS("Intermediate/ctmm/error/FITS_aa_error.rds")
+FITSc <- readRDS("Intermediate/ctmm/error/FITS_ce_error.rds")
+FITSr <- readRDS("Intermediate/ctmm/error/FITS_rr_error.rds")
+FITSa2 <- readRDS("Intermediate/ctmm/error/FITS_aa2_error.rds")
+FITSs <- readRDS("Intermediate/ctmm/error/FITS_sp_error.rds")
+FITSf <- readRDS("Intermediate/ctmm/error/FITS_fl_error.rds")
+AKDEa <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds")
+AKDEc <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds")
+AKDEr <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds")
+AKDEa2 <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds")
+AKDEs <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds")
+AKDEf <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds")
 
 ```
 
@@ -84,6 +84,8 @@ summarize_fits <- function(fit){
          tau_high = (summary$CI[2,3]/3600))
   
 }
+
+summary(FITSc[["C20"]])
 
 # wrapper to stack area info into data frame
 add_tau <- function(id){
@@ -335,11 +337,11 @@ DF <- tibble(ID = names(AA),
 
 # filter out complete segments
 emulated_df <- DF %>% 
-  filter(!grepl('all', ID)) %>% # removes columns using all points, only want emulated regimes
-  mutate(clumped_or_random = str_sub(ID,1,nchar(ID)-1),
-         ID = str_c(toupper(str_sub(ID,1,1)), str_sub(ID, -1, -1)),
-         raw_locs = real_locs$num_points,
-         locs_30sec = locs_30sec$num_points)
+  filter(!grepl('all', ID)) %>%  # removes columns using all points, only want emulated regimes
+  mutate(clumped_or_random = str_sub(ID,1,1))
+         #raw_locs = real_locs$num_points,
+         #locs_30sec = locs_30sec$num_points,
+         #ID = str_c(toupper(str_sub(ID,1,1)), str_sub(ID, -1, -1)))
 
 # filter out sampling regimes
 true_df <- DF %>% 

@@ -46,17 +46,17 @@ The below figures and tables show the above information for each of the six grou
 
 
 ```{r, include=FALSE}
-aa_fit <- readRDS("../Intermediate/FITS_aa.rds") # read in model fits
+aa_fit <- readRDS("../Intermediate/ctmm/error/FITS_aa_error.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-aa_svf <- readRDS("../Intermediate/SVF_aa.rds") # read in variograms
+aa_svf <- readRDS("Intermediate/ctmm/error/SVF_aa_error.rds") # read in variograms
 
 # save image of variograms plotted with model fits
 png(filename = "Figures/AA_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa_svf, aa_fit, 
            model_color = "#009E73", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(aa_svf))
@@ -71,9 +71,11 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval = FALSE}
 
 ### MODEL SUMMARY
+
+# below not necessary anymore
 
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
@@ -129,41 +131,43 @@ knitr::kable(aa_fits_summaries,
 ## changed to indicate number of days to make more informative
 
 # change data to sf for mapping in ggplot
-aa_data_sf <- readRDS("Intermediate/DATA_aa.rds") %>% 
+aa_data_sf <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% # map telemetery list into sf dataframe
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+  mutate(id = identity,
+    # id = gsub("R", "S", identity),
+    #      id = ifelse(id == "C1", "C30", 
+    #                  ifelse(id == "C2", "C20",
+    #                         ifelse(id == "C3", "C10",
+    #                                ifelse(id == "C4", "C6",
+    #                                       ifelse(id == "C5", "C3",
+    #                                              ifelse(id == "S1", "S30",
+    #                                                     ifelse(id == "S2", "S20",
+    #                                                            ifelse(id == "S3", "S10",
+    #                                                                   ifelse(id == "S4", "S6",
+    #                                                                          ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% # remove complete segment to map only sampling regimes
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0") # change to utm
 
 # same procedure with HR mean boundary
-aa_akde_sf <- readRDS("Intermediate/AKDE_aa.rds") %>% 
+aa_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    # name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -171,21 +175,22 @@ aa_akde_sf <- readRDS("Intermediate/AKDE_aa.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # again with HR confidence boundaries
-aa_akde_CI <- readRDS("Intermediate/AKDE_aa.rds") %>% 
+aa_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    # name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -193,10 +198,11 @@ aa_akde_CI <- readRDS("Intermediate/AKDE_aa.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # do the same with locations from complete segment (to plot also the missing points)
-aa_all_data <- readRDS("Intermediate/DATA_aa.rds") %>% 
+aa_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -243,7 +249,7 @@ aa_thinned_data <- as.data.frame(do.call(rbind, aa_thinned_data)) %>%
 ## make plot
 
 # get colors
-colors <- c("missing points" = "#de4968", "used points" = "#40bd72")
+colors <- c("missing points" = "#E1BE6A", "used points" = "#40B0A6")
 shape <- c("missing points" = 1, "used points" = 16)
 size <- c("missing points" = 0.8, "used points" = 1.2)
 labels <- c("missing points", "used points")
@@ -252,16 +258,16 @@ labels <- c("missing points", "used points")
 p1 <- ggplot() +
   geom_sf(data = aa_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = aa_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.6) +
-  geom_sf(data = aa_akde_CI, # HR CIs
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = aa_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
-  geom_sf(data = aa_akde_sf, # HR mean boundary
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
+  geom_sf(data = aa_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -301,7 +307,7 @@ ggsave(here::here("Figures", file.name.performance),
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 # read in plot
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_03_07_212749.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_07_11_140137.jpg")
 ```
 
 ### II. RR Group
@@ -310,18 +316,18 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ### NOTE: SEE AA GROUP CODE FOR BETTER ANNOTATION -- THE SAME CODE IS USED FOR ALL GROUPS
 
-rr_fit <- readRDS("../Intermediate/FITS_rr.rds") # read in model fits
+rr_fit <- readRDS("../Intermediate/ctmm/error/FITS_rr_error.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
 # plot variograms
 
-rr_svf <- readRDS("Intermediate/SVF_rr.rds") # read in variograms
+rr_svf <- readRDS("Intermediate/ctmm/error/SVF_rr_error.rds") # read in variograms
 
 png(filename = "Figures/RR_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(rr_svf, rr_fit, 
            model_color = "#56B4E9", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(rr_svf))
@@ -332,15 +338,15 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_SVF.png")
 ```
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
-names(rr_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-
-# change identity of fits
-for (i in 1:length(names(rr_fit))){
-  rr_fit[[i]]@info$identity <- names(rr_fit)[[i]]
-}
+# names(rr_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+# 
+# # change identity of fits
+# for (i in 1:length(names(rr_fit))){
+#   rr_fit[[i]]@info$identity <- names(rr_fit)[[i]]
+# }
 ```
 
 
@@ -365,41 +371,43 @@ knitr::kable(rr_fits_summaries,
 ## first change everything to sf objects
 
 # data
-rr_data_sf <- readRDS("Intermediate/DATA_rr.rds") %>% 
+rr_data_sf <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+  mutate(id = identity,
+    # id = gsub("R", "S", identity),
+    #      id = ifelse(id == "C1", "C30", 
+    #                  ifelse(id == "C2", "C20",
+    #                         ifelse(id == "C3", "C10",
+    #                                ifelse(id == "C4", "C6",
+    #                                       ifelse(id == "C5", "C3",
+    #                                              ifelse(id == "S1", "S30",
+    #                                                     ifelse(id == "S2", "S20",
+    #                                                            ifelse(id == "S3", "S10",
+    #                                                                   ifelse(id == "S4", "S6",
+    #                                                                          ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-rr_akde_sf <- readRDS("Intermediate/AKDE_rr.rds") %>% 
+rr_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -407,21 +415,22 @@ rr_akde_sf <- readRDS("Intermediate/AKDE_rr.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-rr_akde_CI <- readRDS("Intermediate/AKDE_rr.rds") %>% 
+rr_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -429,10 +438,11 @@ rr_akde_CI <- readRDS("Intermediate/AKDE_rr.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-rr_all_data <- readRDS("Intermediate/DATA_rr.rds") %>% 
+rr_all_data <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -476,18 +486,18 @@ rr_thinned_data <- as.data.frame(do.call(rbind, rr_thinned_data)) %>%
 
 # plot
 p2 <- ggplot() +
-  geom_sf(data = rr_data_sf, 
+  geom_sf(data = rr_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = rr_thinned_data, 
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = rr_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.6) +
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = rr_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = rr_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -526,23 +536,23 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from RR sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_03_07_212625.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_07_11_140836.jpg")
 ```
 
 ### III. CE Group
 
 ```{r, include = FALSE}
-ce_fit <- readRDS("Intermediate/ctmm/FITS_ce.rds") # read in model fits
+ce_fit <- readRDS("../Intermediate/ctmm/error/FITS_ce_error.rds") # read in model fits
 ```
 
 ```{r, include = FALSE, eval = FALSE}
 # plot variograms
-ce_svf <- readRDS("Intermediate/SVF_ce.rds") # read in variograms
+ce_svf <- readRDS("Intermediate/ctmm/error/SVF_ce_error.rds") # read in variograms
 
 png(filename = "Figures/CE_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(ce_svf, ce_fit, 
            model_color = "#E69F00", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(ce_svf))
@@ -554,15 +564,15 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_SVF.png")
 ```
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval=FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
-names(ce_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-
-# change identity of fits
-for (i in 1:length(names(ce_fit))){
-  ce_fit[[i]]@info$identity <- names(ce_fit)[[i]]
-}
+# names(ce_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+# 
+# # change identity of fits
+# for (i in 1:length(names(ce_fit))){
+#   ce_fit[[i]]@info$identity <- names(ce_fit)[[i]]
+# }
 ```
 
 
@@ -587,7 +597,7 @@ knitr::kable(ce_fits_summaries,
 ## change to sf objects
 
 # data
-ce_data_sf <- readRDS("Intermediate/ctmm/DATA_ce.rds") %>% 
+ce_data_sf <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
   mutate(id = factor(identity, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
@@ -596,21 +606,22 @@ ce_data_sf <- readRDS("Intermediate/ctmm/DATA_ce.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-ce_akde_sf <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>% 
+ce_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -618,21 +629,22 @@ ce_akde_sf <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-ce_akde_CI <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>% 
+ce_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>% 
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -640,10 +652,11 @@ ce_akde_CI <- readRDS("Intermediate/ctmm/AKDE_ce.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-ce_all_data <- readRDS("Intermediate/ctmm/DATA_ce.rds") %>% 
+ce_all_data <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
-  reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  reduce(rbind) %>%
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -684,20 +697,22 @@ ce_thinned_data <- as.data.frame(do.call(rbind, ce_thinned_data)) %>%
 
 ```{r, include = FALSE, eval = FALSE}
 
+size_ce <- c("missing points" = 1.5, "used points" = 1.2)
+
 # plot
 p3 <- ggplot() +
-  geom_sf(data = ce_data_sf, 
+  geom_sf(data = ce_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = ce_thinned_data, 
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = ce_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.8) +
+          inherit.aes = FALSE, alpha = 1.2) +
   geom_sf(data = ce_akde_CI, 
           inherit.aes = FALSE, 
           fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = ce_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, linewidth = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -715,6 +730,7 @@ p3 <- ggplot() +
   theme(legend.position="bottom", 
         legend.title = element_blank(),
         legend.text=element_text(size=14),
+        legend.key=element_blank(),
         #axis.text.x = element_text(angle=45, hjust = 1),
         axis.title = element_blank(),
         axis.text = element_blank(),
@@ -727,6 +743,7 @@ p3 <- ggplot() +
         panel.background = element_rect(fill = "white"),
         panel.border = element_rect(colour = "black", fill=NA, linewidth=0.5),
         strip.background = element_rect(color = "black", linewidth = 0.5)) +
+  #guides(color = guide_legend(override.aes = list(size=5))) +
   facet_wrap(~factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")), nrow = 2)
 ```
 
@@ -743,25 +760,25 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_performance_plots_2023_03_07_212401.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_performance_plots_2023_07_11_142209.jpg")
 ```
 
 ### IV. AA2 Group
 
 
 ```{r, include=FALSE}
-aa2_fit <- readRDS("../Intermediate/FITS_aa2.rds") # model fits
+aa2_fit <- readRDS("../Intermediate/ctmm/error/FITS_aa2_error.rds") # model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
 # plot variograms
 
-aa2_svf <- readRDS("Intermediate/SVF_aa2.rds") # read in variograms
+aa2_svf <- readRDS("Intermediate/ctmm/error/SVF_aa2_error.rds") # read in variograms
 
 png(filename = "Figures/AA2_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa2_svf, aa2_fit, 
            model_color = "#AA4499", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(aa2_svf))
@@ -774,15 +791,15 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 ```
 
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
-names(aa2_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-
-# change identity of fits
-for (i in 1:length(names(aa2_fit))){
-  aa2_fit[[i]]@info$identity <- names(aa2_fit)[[i]]
-}
+# names(aa2_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+# 
+# # change identity of fits
+# for (i in 1:length(names(aa2_fit))){
+#   aa2_fit[[i]]@info$identity <- names(aa2_fit)[[i]]
+# }
 ```
 
 
@@ -808,41 +825,43 @@ knitr::kable(aa2_fits_summaries,
 ## first change everything to sf objects
 
 # data
-aa2_data_sf <- readRDS("Intermediate/DATA_aa2.rds") %>% 
+aa2_data_sf <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+  mutate(id = identity,
+    # id = gsub("R", "S", identity),
+    #      id = ifelse(id == "C1", "C30", 
+    #                  ifelse(id == "C2", "C20",
+    #                         ifelse(id == "C3", "C10",
+    #                                ifelse(id == "C4", "C6",
+    #                                       ifelse(id == "C5", "C3",
+    #                                              ifelse(id == "S1", "S30",
+    #                                                     ifelse(id == "S2", "S20",
+    #                                                            ifelse(id == "S3", "S10",
+    #                                                                   ifelse(id == "S4", "S6",
+    #                                                                          ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-aa2_akde_sf <- readRDS("Intermediate/AKDE_aa2.rds") %>% 
+aa2_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -850,21 +869,22 @@ aa2_akde_sf <- readRDS("Intermediate/AKDE_aa2.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-aa2_akde_CI <- readRDS("Intermediate/AKDE_aa2.rds") %>% 
+aa2_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -872,10 +892,11 @@ aa2_akde_CI <- readRDS("Intermediate/AKDE_aa2.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-aa2_all_data <- readRDS("Intermediate/DATA_aa2.rds") %>% 
+aa2_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
-  reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  reduce(rbind) %>%
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -918,18 +939,18 @@ aa2_thinned_data <- as.data.frame(do.call(rbind, aa2_thinned_data)) %>%
 ```{r, include = FALSE, eval = FALSE}
 # plot
 p4 <- ggplot() +
-  geom_sf(data = aa2_data_sf, 
+  geom_sf(data = aa2_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = aa2_thinned_data, 
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = aa2_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.4) +
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = aa2_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = aa2_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -968,23 +989,23 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from AA2 sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_performance_plots_2023_03_07_212216.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA2_performance_plots_2023_07_11_143200.jpg")
 ```
 
 ### V. SP Group
 
 ```{r, include=FALSE}
-sp_fit <- readRDS("../Intermediate/FITS_sp.rds") # read in model fits
+sp_fit <- readRDS("../Intermediate/ctmm/error/FITS_sp_error.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
 # plot variograms
-sp_svf <- readRDS("Intermediate/SVF_sp.rds") # read in variograms
+sp_svf <- readRDS("Intermediate/ctmm/error/SVF_sp_error.rds") # read in variograms
 
 png(filename = "Figures/SP_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(sp_svf, sp_fit, 
            model_color = "#D55E00", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(sp_svf))
@@ -995,15 +1016,15 @@ dev.off()
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_SVF.png")
 ```
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
-names(sp_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-
-# change identity of fits
-for (i in 1:length(names(sp_fit))){
-  sp_fit[[i]]@info$identity <- names(sp_fit)[[i]]
-}
+# names(sp_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+# 
+# # change identity of fits
+# for (i in 1:length(names(sp_fit))){
+#   sp_fit[[i]]@info$identity <- names(sp_fit)[[i]]
+# }
 ```
 
 
@@ -1030,41 +1051,43 @@ knitr::kable(sp_fits_summaries,
 ## first change everything to sf objects
 
 # data
-sp_data_sf <- readRDS("Intermediate/DATA_sp.rds") %>% 
+sp_data_sf <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+  mutate(id = identity,
+    # id = gsub("R", "S", identity),
+    #      id = ifelse(id == "C1", "C30", 
+    #                  ifelse(id == "C2", "C20",
+    #                         ifelse(id == "C3", "C10",
+    #                                ifelse(id == "C4", "C6",
+    #                                       ifelse(id == "C5", "C3",
+    #                                              ifelse(id == "S1", "S30",
+    #                                                     ifelse(id == "S2", "S20",
+    #                                                            ifelse(id == "S3", "S10",
+    #                                                                   ifelse(id == "S4", "S6",
+    #                                                                          ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-sp_akde_sf <- readRDS("Intermediate/AKDE_sp.rds") %>% 
+sp_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -1072,21 +1095,22 @@ sp_akde_sf <- readRDS("Intermediate/AKDE_sp.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-sp_akde_CI <- readRDS("Intermediate/AKDE_sp.rds") %>% 
+sp_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -1094,10 +1118,11 @@ sp_akde_CI <- readRDS("Intermediate/AKDE_sp.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-sp_all_data <- readRDS("Intermediate/DATA_sp.rds") %>% 
+sp_all_data <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -1140,18 +1165,18 @@ sp_thinned_data <- as.data.frame(do.call(rbind, sp_thinned_data)) %>%
 ```{r, include = FALSE, eval = FALSE}
 # plot
 p5 <- ggplot() +
-  geom_sf(data = sp_data_sf, 
+  geom_sf(data = sp_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = sp_thinned_data, 
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = sp_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.4) +
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = sp_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = sp_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -1190,24 +1215,24 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from SP sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_performance_plots_2023_03_07_213913.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/SP_performance_plots_2023_07_11_145830.jpg")
 ```
 
 ### VI. FL Group
 
 ```{r, include=FALSE}
-fl_fit <- readRDS("../Intermediate/FITS_fl.rds") # read in model fits
+fl_fit <- readRDS("../Intermediate/ctmm/error/FITS_fl_error.rds") # read in model fits
 ```
 
 ```{r, include=FALSE, eval=FALSE}
 # plot variograms
 
-fl_svf <- readRDS("Intermediate/SVF_fl.rds") # read in variograms
+fl_svf <- readRDS("Intermediate/ctmm/error/SVF_fl_error.rds") # read in variograms
 
 png(filename = "Figures/FL_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(fl_svf, fl_fit, 
            model_color = "#997700", 
-           cex = 3, fraction = 1, 
+           cex = 3, fraction = 0.6, 
            relative_zoom = T,
            columns = 4,
            title_vec = names(fl_svf))
@@ -1219,15 +1244,15 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 ```
 
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval = FALSE}
 ## change names of sampling regimes (were originally named C1, C2, C3, etc.)
 ## changed to indicate number of days to make more informative
-names(fl_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-
-# change identity of fits
-for (i in 1:length(names(fl_fit))){
-  fl_fit[[i]]@info$identity <- names(fl_fit)[[i]]
-}
+# names(fl_fit) <- c("all","C30","C20","C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
+# 
+# # change identity of fits
+# for (i in 1:length(names(fl_fit))){
+#   fl_fit[[i]]@info$identity <- names(fl_fit)[[i]]
+# }
 ```
 
 
@@ -1252,41 +1277,43 @@ knitr::kable(fl_fits_summaries,
 ## first change everything to sf objects
 
 # data
-fl_data_sf <- readRDS("Intermediate/DATA_fl.rds") %>% 
+fl_data_sf <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+  mutate(id = identity,
+    # id = gsub("R", "S", identity),
+    #      id = ifelse(id == "C1", "C30", 
+    #                  ifelse(id == "C2", "C20",
+    #                         ifelse(id == "C3", "C10",
+    #                                ifelse(id == "C4", "C6",
+    #                                       ifelse(id == "C5", "C3",
+    #                                              ifelse(id == "S1", "S30",
+    #                                                     ifelse(id == "S2", "S20",
+    #                                                            ifelse(id == "S3", "S10",
+    #                                                                   ifelse(id == "S4", "S6",
+    #                                                                          ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
-fl_akde_sf <- readRDS("Intermediate/AKDE_fl.rds") %>% 
+fl_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ), # get id by subsetting everything before space in name
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -1294,21 +1321,22 @@ fl_akde_sf <- readRDS("Intermediate/AKDE_fl.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
-fl_akde_CI <- readRDS("Intermediate/AKDE_fl.rds") %>% 
+fl_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>% 
   purrr::map(ctmm::as.sf, level.UD = 0.95) %>% 
   reduce(rbind) %>% 
-  mutate(name = gsub("R", "S", name),
+  mutate(
+    #name = gsub("R", "S", name),
          id = gsub( " .*$", "", name ),
-         id = ifelse(id == "C1", "C30", 
-                     ifelse(id == "C2", "C20",
-                            ifelse(id == "C3", "C10",
-                                   ifelse(id == "C4", "C6",
-                                          ifelse(id == "C5", "C3",
-                                                 ifelse(id == "S1", "S30",
-                                                        ifelse(id == "S2", "S20",
-                                                               ifelse(id == "S3", "S10",
-                                                                      ifelse(id == "S4", "S6",
-                                                                             ifelse(id == "S5", "S3", id)))))))))),
+         # id = ifelse(id == "C1", "C30", 
+         #             ifelse(id == "C2", "C20",
+         #                    ifelse(id == "C3", "C10",
+         #                           ifelse(id == "C4", "C6",
+         #                                  ifelse(id == "C5", "C3",
+         #                                         ifelse(id == "S1", "S30",
+         #                                                ifelse(id == "S2", "S20",
+         #                                                       ifelse(id == "S3", "S10",
+         #                                                              ifelse(id == "S4", "S6",
+         #                                                                     ifelse(id == "S5", "S3", id)))))))))),
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
@@ -1316,10 +1344,11 @@ fl_akde_CI <- readRDS("Intermediate/AKDE_fl.rds") %>%
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
-fl_all_data <- readRDS("Intermediate/DATA_fl.rds") %>% 
+fl_all_data <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds") %>% 
   purrr::map(ctmm::as.sf) %>% 
   reduce(rbind) %>% 
-  mutate(id = gsub("R", "S", identity)) %>% 
+  mutate(id = identity) %>% 
+  #mutate(id = gsub("R", "S", identity)) %>% 
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
@@ -1362,18 +1391,18 @@ fl_thinned_data <- as.data.frame(do.call(rbind, fl_thinned_data)) %>%
 ```{r, include = FALSE, eval = FALSE}
 # plot
 p6 <- ggplot() +
-  geom_sf(data = fl_data_sf, 
+  geom_sf(data = fl_data_sf, # data in sampling regimes
           aes(color = "used points", shape = "used points", size = "used points"),
-          inherit.aes = FALSE, alpha = 1.5) +
-  geom_sf(data = fl_thinned_data, 
+          inherit.aes = FALSE, alpha = 1) +
+  geom_sf(data = fl_thinned_data, # data in complete segment that is missing from sampling regimes
           aes(color = "missing points", shape = "missing points", size = "missing points"),
-          inherit.aes = FALSE, alpha = 0.4) +
+          inherit.aes = FALSE, alpha = 1) +
   geom_sf(data = fl_akde_CI, 
           inherit.aes = FALSE, 
-          fill = NA, linetype = "dashed", alpha = 0.3, size = 0.3) +
+          fill = NA, linetype = "dashed", alpha = 0.8, linewidth = 0.2) +
   geom_sf(data = fl_akde_sf,
           inherit.aes = FALSE, 
-          fill =NA , alpha = 0.06, size = 0.8) +
+          fill =NA , alpha = 0.06, linewidth = 1) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
@@ -1412,5 +1441,5 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from FL sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_performance_plots_2023_03_07_214422.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/FL_performance_plots_2023_07_11_150227.jpg")
 ```

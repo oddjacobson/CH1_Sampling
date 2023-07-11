@@ -1116,12 +1116,19 @@ The following code generates the variograms, movement models, and akde home rang
 # change width of lag bin to make variograms less messy
 dt <- c(1,10) %#% "hour"
 
+# assign 20-meter 2D RMS UERE -- accounting for error
+uere(AA_ctmm) <- 20
+UERE <- uere(AA_ctmm)
+UERE$DOF[] <- 2
+summary(UERE)
+uere(AA_ctmm) <- UERE
+
 # AA..............
 SVFa <- FITSa <- AKDEa <- list() # create empty lists to be filled
 
 for(i in 1:length(AA_ctmm)){
   SVFa[[i]] <- variogram(AA_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(AA_ctmm[[i]],interactive=FALSE, variogram = SVFa[[i]]) #use variogram to get initial parameters
+  GUESS <- ctmm.guess(AA_ctmm[[i]], CTMM=ctmm(error=TRUE), interactive=FALSE, variogram = SVFa[[i]]) #use variogram to get initial parameters
   FITSa[[i]] <- ctmm.select(AA_ctmm[[i]],GUESS,trace=2) # fit movement models
   AKDEa[[i]] <- akde(AA_ctmm[[i]],FITSa[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) # hr estimation
 }
@@ -1132,11 +1139,13 @@ for(i in 1:length(AA_ctmm)){
 names(AKDEa) <- names(FITSa) <- names(SVFa) <- names(AA_ctmm)
 
 #RR........................
+uere(RR_ctmm) <- UERE
+
 SVFr <- FITSr <- AKDEr <- list()
 
 for(i in 1:length(RR_ctmm)){
   SVFr[[i]] <- variogram(RR_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(RR_ctmm[[i]],interactive=FALSE, variogram = SVFr[[i]])
+  GUESS <- ctmm.guess(RR_ctmm[[i]], CTMM=ctmm(error=TRUE), interactive=FALSE, variogram = SVFr[[i]])
   FITSr[[i]] <- ctmm.select(RR_ctmm[[i]],GUESS,trace=2)
   AKDEr[[i]] <- akde(RR_ctmm[[i]],FITSr[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
 }
@@ -1144,11 +1153,13 @@ for(i in 1:length(RR_ctmm)){
 names(AKDEr) <- names(FITSr) <- names(SVFr) <- names(RR_ctmm)
 
 # CE........................
+uere(CE_ctmm) <- UERE
+
 SVFc <- FITSc <- AKDEc <- list()
 
 for(i in 1:length(CE_ctmm)){
   SVFc[[i]] <- variogram(CE_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(CE_ctmm[[i]],interactive=FALSE, variogram = SVFc[[i]])
+  GUESS <- ctmm.guess(CE_ctmm[[i]],CTMM=ctmm(error=TRUE),interactive=FALSE, variogram = SVFc[[i]])
   FITSc[[i]] <- ctmm.select(CE_ctmm[[i]],GUESS,trace=2)
   AKDEc[[i]] <- akde(CE_ctmm[[i]],FITSc[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
 }
@@ -1156,11 +1167,13 @@ for(i in 1:length(CE_ctmm)){
 names(AKDEc) <- names(FITSc) <- names(SVFc) <- names(CE_ctmm)
 
 # AA2............................
+uere(AA2_ctmm) <- UERE
+
 SVFa2 <- FITSa2 <- AKDEa2 <- list()
 
 for(i in 1:length(AA2_ctmm)){
   SVFa2[[i]] <- variogram(AA2_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(AA2_ctmm[[i]],interactive=FALSE, variogram = SVFa2[[i]])
+  GUESS <- ctmm.guess(AA2_ctmm[[i]],CTMM=ctmm(error=TRUE),interactive=FALSE, variogram = SVFa2[[i]])
   FITSa2[[i]] <- ctmm.select(AA2_ctmm[[i]],GUESS,trace=2)
   AKDEa2[[i]] <- akde(AA2_ctmm[[i]],FITSa2[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE))
 }
@@ -1169,11 +1182,13 @@ for(i in 1:length(AA2_ctmm)){
 names(AKDEa2) <- names(FITSa2) <- names(SVFa2) <- names(AA2_ctmm)
 
 # SP...........................
+uere(SP_ctmm) <- UERE
+
 SVFs <- FITSs <- AKDEs <- list()
 
 for(i in 1:length(SP_ctmm)){
   SVFs[[i]] <- variogram(SP_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(SP_ctmm[[i]],interactive=FALSE, variogram = SVFs[[i]])
+  GUESS <- ctmm.guess(SP_ctmm[[i]],CTMM=ctmm(error=TRUE),interactive=FALSE, variogram = SVFs[[i]])
   FITSs[[i]] <- ctmm.select(SP_ctmm[[i]],GUESS,trace=2)
   AKDEs[[i]] <- akde(SP_ctmm[[i]],FITSs[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
 }
@@ -1181,11 +1196,13 @@ for(i in 1:length(SP_ctmm)){
 names(AKDEs) <- names(FITSs) <- names(SVFs) <- names(SP_ctmm)
 
 # FL .............................
+uere(FL_ctmm) <- UERE
+
 SVFf <- FITSf <- AKDEf <- list()
 
 for(i in 1:length(FL_ctmm)){
   SVFf[[i]] <- variogram(FL_ctmm[[i]], dt = dt)
-  GUESS <- ctmm.guess(FL_ctmm[[i]],interactive=FALSE, variogram = SVFf[[i]])
+  GUESS <- ctmm.guess(FL_ctmm[[i]],CTMM=ctmm(error=TRUE),interactive=FALSE, variogram = SVFf[[i]])
   FITSf[[i]] <- ctmm.select(FL_ctmm[[i]],GUESS,trace=2)
   AKDEf[[i]] <- akde(FL_ctmm[[i]],FITSf[[i]], weights = TRUE, grid=list(dr=10,align.to.origin=TRUE)) 
 }
@@ -1196,29 +1213,29 @@ names(AKDEf) <- names(FITSf) <- names(SVFf) <- names(FL_ctmm)
 ```{r, include = FALSE, eval=FALSE}
 
 # save 
-saveRDS(SVFa, "Intermediate/SVF_aa.rds")
-saveRDS(SVFc, "Intermediate/SVF_ce.rds")
-saveRDS(SVFr, "Intermediate/SVF_rr.rds")
-saveRDS(SVFa2, "Intermediate/SVF_aa2.rds")
-saveRDS(SVFs, "Intermediate/SVF_sp.rds")
-saveRDS(SVFf, "Intermediate/SVF_fl.rds")
-saveRDS(FITSa, "Intermediate/FITS_aa.rds")
-saveRDS(FITSc, "Intermediate/FITS_ce.rds")
-saveRDS(FITSr, "Intermediate/FITS_rr.rds")
-saveRDS(FITSa2, "Intermediate/FITS_aa2.rds")
-saveRDS(FITSs, "Intermediate/FITS_sp.rds")
-saveRDS(FITSf, "Intermediate/FITS_fl.rds")
-saveRDS(AKDEa, "Intermediate/AKDE_aa.rds")
-saveRDS(AKDEc, "Intermediate/AKDE_ce.rds")
-saveRDS(AKDEr, "Intermediate/AKDE_rr.rds")
-saveRDS(AKDEa2, "Intermediate/AKDE_aa2.rds")
-saveRDS(AKDEs, "Intermediate/AKDE_sp.rds")
-saveRDS(AKDEf, "Intermediate/AKDE_fl.rds")
-saveRDS(AA_ctmm, "Intermediate/DATA_aa.rds")
-saveRDS(CE_ctmm, "Intermediate/DATA_ce.rds")
-saveRDS(RR_ctmm, "Intermediate/DATA_rr.rds")
-saveRDS(AA2_ctmm, "Intermediate/DATA_aa2.rds")
-saveRDS(SP_ctmm, "Intermediate/DATA_sp.rds")
-saveRDS(FL_ctmm, "Intermediate/DATA_fl.rds")
+saveRDS(SVFa, "Intermediate/ctmm/error/SVF_aa_error.rds")
+saveRDS(SVFc, "Intermediate/ctmm/error/SVF_ce_error.rds")
+saveRDS(SVFr, "Intermediate/ctmm/error/SVF_rr_error.rds")
+saveRDS(SVFa2, "Intermediate/ctmm/error/SVF_aa2_error.rds")
+saveRDS(SVFs, "Intermediate/ctmm/error/SVF_sp_error.rds")
+saveRDS(SVFf, "Intermediate/ctmm/error/SVF_fl_error.rds")
+saveRDS(FITSa, "Intermediate/ctmm/error/FITS_aa_error.rds")
+saveRDS(FITSc, "Intermediate/ctmm/error/FITS_ce_error.rds")
+saveRDS(FITSr, "Intermediate/ctmm/error/FITS_rr_error.rds")
+saveRDS(FITSa2, "Intermediate/ctmm/error/FITS_aa2_error.rds")
+saveRDS(FITSs, "Intermediate/ctmm/error/FITS_sp_error.rds")
+saveRDS(FITSf, "Intermediate/ctmm/error/FITS_fl_error.rds")
+saveRDS(AKDEa, "Intermediate/ctmm/error/AKDE_aa_error.rds")
+saveRDS(AKDEc, "Intermediate/ctmm/error/AKDE_ce_error.rds")
+saveRDS(AKDEr, "Intermediate/ctmm/error/AKDE_rr_error.rds")
+saveRDS(AKDEa2, "Intermediate/ctmm/error/AKDE_aa2_error.rds")
+saveRDS(AKDEs, "Intermediate/ctmm/error/AKDE_sp_error.rds")
+saveRDS(AKDEf, "Intermediate/ctmm/error/AKDE_fl_error.rds")
+saveRDS(AA_ctmm, "Intermediate/ctmm/error/DATA_aa_error.rds")
+saveRDS(CE_ctmm, "Intermediate/ctmm/error/DATA_ce_error.rds")
+saveRDS(RR_ctmm, "Intermediate/ctmm/error/DATA_rr_error.rds")
+saveRDS(AA2_ctmm, "Intermediate/ctmm/error/DATA_aa2_error.rds")
+saveRDS(SP_ctmm, "Intermediate/ctmm/error/DATA_sp_error.rds")
+saveRDS(FL_ctmm, "Intermediate/ctmm/error/DATA_fl_error.rds")
 
 ```
