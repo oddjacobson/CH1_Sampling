@@ -560,7 +560,7 @@ dev.off()
 
 ```
 
-```{r, echo=FALSE, fig.cap="AA Variograms and Model Fits", fig.align='center', out.width = '95%'}
+```{r, echo=FALSE, fig.cap="CE Variograms and Model Fits", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_SVF.png")
 ```
 
