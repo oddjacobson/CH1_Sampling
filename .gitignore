@@ -42,6 +42,7 @@ vignettes/*.pdf
 Data/30min_trkpts_formatted
 Data/trk.rds
 Figures
+Scripts
 RMarkdowns/Appendix
 RMarkdowns/Old_Markdowns
 RMarkdowns/PDFs
