@@ -103,8 +103,8 @@ the code for this is very long and confusing -- sorry
 ```{r, warning=FALSE, message=FALSE, fig.height=9, fig.width=13}
 # set aesthetics for key
 colors <- c("Spread" = "#fca636", "Concentrated" = "#0d0887")
-linetype <- c("True" = "solid", "Estimate" = "dashed")
-shape <- c("True" = 19, "Estimate" = 1)
+linetype <- c("Reliable" = "solid", "Estimate" = "dashed")
+shape <- c("Reliable" = 19, "Estimate" = 1)
 
 # sperate dataframes so that key can look correct
 concentrated <- df %>% filter(type == "Concentrated")
@@ -119,10 +119,10 @@ p1 <- ggplot(data=df, aes(x = factor(id, levels = c("C30", "C20", "C10","C6", "C
              aes(y = xings_sampled, color = "Spread", shape = "Estimate"),size = 2, 
              stat="identity", position=position_nudge(x = 0.1)) +
   geom_point(data = concentrated,
-             aes(y = xings_true, color = "Concentrated", shape = "True"), size = 2, 
+             aes(y = xings_true, color = "Concentrated", shape = "Reliable"), size = 2, 
              stat="identity", position=position_nudge(x = -0.1)) +
   geom_point(data = spread,
-             aes(y = xings_true, color = "Spread", shape = "True"), size = 2, 
+             aes(y = xings_true, color = "Spread", shape = "Reliable"), size = 2, 
              stat="identity", position=position_nudge(x = -0.1)) +
   geom_linerange(data = concentrated, 
                  aes(ymax=xings_sampled_high,ymin=xings_sampled_low, color = "Concentrated", linetype = "Estimate"),
@@ -131,10 +131,10 @@ p1 <- ggplot(data=df, aes(x = factor(id, levels = c("C30", "C20", "C10","C6", "C
                  aes(ymax=xings_sampled_high,ymin=xings_sampled_low, color = "Spread", linetype = "Estimate"),
                  position=position_nudge(0.1),width=0.25) +
   geom_linerange(data = concentrated, 
-                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Concentrated", linetype = "True"), 
+                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Concentrated", linetype = "Reliable"), 
                  position=position_nudge(-0.1),width=0.25) +
   geom_linerange(data = spread, 
-                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Spread", linetype = "True"), 
+                 aes(ymax=xings_true_high,ymin=xings_true_low, color = "Spread", linetype = "Reliable"), 
                  position=position_nudge(-0.1),width=0.25) +
   scale_color_manual(values = colors) +
   scale_shape_manual(values = shape) +
