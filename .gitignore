@@ -39,6 +39,7 @@ vignettes/*.pdf
 .Renviron
 
 # files
+Data/non_shifted_data
 Data/30min_trkpts_formatted
 Data/trk.rds
 Figures

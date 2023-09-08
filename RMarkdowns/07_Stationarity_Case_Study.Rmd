@@ -40,6 +40,9 @@ UDs_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Interme
 UDs_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_AKDEs_seasonal.rds")
 DATA_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA.rds")
 DATA_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA_seasonal.rds")
+
+
+
 ```
 
 Format data
@@ -161,7 +164,7 @@ data_sf <- DATA_list %>%
          season = ifelse(month(timestamp) %in% c(1:6), "Dry Season", "Wet Season")) %>% 
   st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# seperate groups and add scale column
+# separate groups and add scale column
 aa_data_sf <- data_sf %>%
   filter(group == "aa") %>% 
   mutate(scale = ifelse(year(timestamp) == 2013,
