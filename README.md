@@ -2,7 +2,7 @@
 
 This repository contains the analysis for the 1st chapter of my PhD. You can find the code used for the analyses within the RMarkdown files within the RMarkdown folder. 
 
-The Data folder contains the .csv file for the dataframe used for the full analysis. The data can also be used to go through the material in Appendix 1 to practice home range analysis using continuous-time movement modelling and the autocorrelated kernel density estimator. There are also other versions of the dataframe, such as .rds as well as a shapefile which can be imported into GIS software such as ArcGIS or QGIS.
+The Data folder contains the .csv file (or .rds) for the dataframe used for the full analysess. The data can also be used to go through the material in Appendix 1 to practice home range analysis using continuous-time movement modelling and the autocorrelated kernel density estimator. 
 
 The Intermediate folder contains .rds files for the statistical models, movement models, variograms, and home range estimates. These can be read into R in case one would like to skip running the lengthy calculations and speed up computation time during the analyses. 
 
