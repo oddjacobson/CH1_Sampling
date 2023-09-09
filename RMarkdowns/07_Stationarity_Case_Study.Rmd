@@ -34,41 +34,76 @@ library(patchwork)
 library(cowplot)
 ```
 
-Read in data and home ranges
+Read in data
 ```{r, eval= FALSE}
-UDs_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_AKDEs.rds")
-UDs_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_AKDEs_seasonal.rds")
-DATA_annual <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA.rds")
-DATA_seasonal <- readRDS("C:/Users/ojacobson/Documents/PhD/R/CH2_Group_size/Intermediate/ctmm/HR/gps_1990-2019_DATA_seasonal.rds")
+# read in raw data
+df_raw <- read.csv("Data/CH1_GPS_data_case_study.csv", row.names = NULL)
 
+# convert to telemetry object for ctmm
+df_ctmm <- df_raw %>% 
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+```
 
+Estimate Annual Home Ranges for AA 2014 and RR 2012
+```{r, eval = FALSE}
+
+# subset data
+UD_data <- df_ctmm[c("aa_2014", "rr_2012")]
+
+## FITTING UNCALIBRATED DATA UNDER A PRIOR
+
+# assign 20-meter 2D RMS UERE
+uere(UD_data) <- 20
+UERE <- uere(UD_data)
+UERE$DOF[] <- 2
+summary(UERE)
+uere(UD_data) <- UERE
+
+## VARIOGRAMS, FITS, AKDES ........ 
+
+SVF <- FITS <- AKDE <- list()
+
+tictoc::tic()
+for(i in 1:length(UD_data)){
+  SVF[[i]] <- variogram(UD_data[[i]], 
+                        dt = c(1,10) %#% "hour")
+  GUESS <- ctmm.guess(UD_data[[i]], 
+                      CTMM=ctmm(error=TRUE), 
+                      interactive=FALSE, 
+                      variogram = SVF[[i]])
+  FITS[[i]] <- ctmm.select(UD_data[[i]],
+                           GUESS,
+                           trace=2, 
+                           cores = 1)
+  AKDE[[i]] <- akde(UD_data[[i]],
+                    FITS[[i]], 
+                    weights = TRUE, 
+                    grid=list(dr=10,align.to.origin=TRUE))
+}
+tictoc::toc() 
+
+names(AKDE) <- names(FITS)  <- names(SVF) <- names(UD_data)
+
+# save AKDEs
+saveRDS(AKDE, "Intermediate/ctmm/error/AKDE_case_study_error.rds")
 
 ```
 
-Format data
+Format data and UDs
 ```{r, eval = FALSE}
-# subset AA 2014
-aa_annual <- UDs_annual[["aa_2014"]]
-aa_wet <- UDs_seasonal[["aa_wet_2014"]]
-aa_dry <- UDs_seasonal[["aa_dry_2014"]]
+# read in AKDEs
+UD_list <- readRDS("Intermediate/ctmm/error/AKDE_case_study_error.rds")
+names(UD_list) <- c("aa_annual", "rr_annual")
 
-# subset RR 2012
-rr_annual <- UDs_annual[["rr_2012"]]
-rr_wet <- UDs_seasonal[["rr_wet_2012"]]
-rr_dry <- UDs_seasonal[["rr_dry_2012"]]
-
-# put into list
-UD_list <- list(aa_annual,aa_wet,aa_dry, rr_annual, rr_wet, rr_dry)
-names(UD_list) <- c("aa_annual", "aa_wet", "aa_dry", "rr_annual", "rr_wet", "rr_dry")
-
+# subset data from out of sample years
 data_names <- c("aa_2013","aa_2015","aa_2016","rr_2011", "rr_2013" , "rr_2014" )
-DATA_list <- DATA_annual[data_names]
+DATA_list <- df_ctmm[data_names]
 ```
 
 Calculate proportion points within home range from previous year, subsequent year and subsequent next year
 
 ```{r, eval = FALSE}
-# subset data out of sample
+# subset data out of sample by group
 aa_dlist <- DATA_list[1:3]
 names(aa_dlist) <- c("aa_prev_year", "aa_next_year", "aa_next_2year")
 
@@ -95,7 +130,7 @@ names(AAt) <- names(AAp_low) <- names(AAp_high) <- names(AAp) <- names(AAf_low) 
 # rr
 RRt <- RRp <-  RRp_low <- RRp_high <- RRf <-  RRf_low <- RRf_high <- list()
 for(i in 1:length(rr_dlist)){
-  RRt[[i]] <- SpatialPoints.telemetry(rr_dlist[i]) %over% SpatialPolygonsDataFrame.UD(UD_list[[4]] ,level.UD=0.95) %>% 
+  RRt[[i]] <- SpatialPoints.telemetry(rr_dlist[i]) %over% SpatialPolygonsDataFrame.UD(UD_list[[2]] ,level.UD=0.95) %>% 
     table(useNA = "always") %>% # keep number of points that fell outside upper CI
     data.frame()  %>% 
     mutate(Prop = round(Freq/sum(Freq), digits = 3), # calculates proportion from frequency
@@ -143,7 +178,7 @@ mean_hr_sf <- UD_list %>%
   rename(id = name) %>%
   mutate(id = gsub( " .*$", "", id ),
          group = str_sub (id, 1,2)) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # transform confidence intervals to sf
 ci_hr_sf <- UD_list %>% 
@@ -153,7 +188,7 @@ ci_hr_sf <- UD_list %>%
   rename(id = name) %>%
   mutate(id = gsub( " .*$", "", id ),
          group = str_sub (id, 1,2)) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # transform data to sf
 data_sf <- DATA_list %>% 
@@ -162,7 +197,7 @@ data_sf <- DATA_list %>%
   rename(id = identity) %>%
   mutate(group = str_sub (id, 1,2),
          season = ifelse(month(timestamp) %in% c(1:6), "Dry Season", "Wet Season")) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # separate groups and add scale column
 aa_data_sf <- data_sf %>%
@@ -210,13 +245,13 @@ p1 <- ggplot() +
   geom_sf(data = mean_hr_sf[mean_hr_sf$id=="aa_2014",], # HR mean boundary
           inherit.aes = FALSE,
           fill =NA , alpha = 0.06, linewidth = 0.8) +
-  geom_text(data = aa_data_sf, aes(x = 679.8, y = 1161.0, label = prop), size = 4) +
+  geom_text(data = aa_data_sf, aes(x = 239.0, y = 608.4, label = prop), size = 4) +
   ggspatial::annotation_scale(location = "bl",
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
-           xlim=c(676.200,680.500), ylim=c(1161.000, 1164.000)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+           xlim=c(235.200,239.500), ylim=c(608.400, 611.400)) +
   labs( x = "Easting (km)", y = "Northing (km)") +
   theme(legend.position="none", 
         legend.title = element_blank(),
@@ -247,13 +282,13 @@ p2 <- ggplot() +
   geom_sf(data = mean_hr_sf[mean_hr_sf$id=="rr_2012",], # HR mean boundary
           inherit.aes = FALSE,
           fill =NA , alpha = 0.06, linewidth = 0.8) +
-  geom_text(data = rr_data_sf, aes(x = 679.8, y = 1159.9, label = prop), size = 4) +
+  geom_text(data = rr_data_sf, aes(x = 238.8, y = 607.400, label = prop), size = 4) +
   ggspatial::annotation_scale(location = "bl", 
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
-          xlim=c(676.500,680.500), ylim=c(1159.900, 1162.750)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"),
+           xlim=c(235.200,239.500), ylim=c(607.400, 610.250)) +
   labs( x = "Easting (km)", y = "Northing (km)") +
   theme(legend.position="bottom", 
         legend.title = element_blank(),
