@@ -31,7 +31,7 @@ library(ggthemes)
 
 ```{r, eval = FALSE}
 # read in data frame 
-df <- read.csv("../Data/CH1_GPS_data.csv", row.names = NULL) 
+df <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) 
 ```
 
 
@@ -61,7 +61,7 @@ AA <- df %>%
 aa.comp <- AA %>% 
   mutate(individual.local.identifier = "all", 
          date = date(timestamp)) %>% # add date column
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date") # change to telemetry object for ctmm
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date") # change to telemetry object for ctmm
 
 # the following objects are thinned within the complete segment
 
@@ -72,33 +72,33 @@ aa.c30 <- AA %>%
   filter(week(timestamp) %in% c(1:6),
          date(timestamp) < date("2014-02-09")) %>% 
   mutate(individual.local.identifier = "C30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 aa.c20 <- AA %>% 
   filter(week(timestamp) %in% c(5:8)) %>% 
   mutate(individual.local.identifier = "C20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 aa.c10 <- AA %>% 
   filter(week(timestamp) %in% c(2:3),
          date(timestamp) < date("2014-01-18")) %>% 
   mutate(individual.local.identifier = "C10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 aa.c6 <- AA %>% 
   filter(date(timestamp) > date("2014-02-15")) %>% 
   mutate(individual.local.identifier = "C6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 aa.c3 <- AA %>% 
   filter(week(timestamp) == 5,
          date(timestamp) < date("2014-02-04")) %>% 
   mutate(individual.local.identifier = "C3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## spread sampling regimes..............................
 
@@ -111,7 +111,7 @@ aa.s30 <- AA %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(aa_days, size = 30))) %>% 
   mutate(individual.local.identifier = "S30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 set.seed(89) 
@@ -119,7 +119,7 @@ aa.s20 <- AA %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 25))) %>% 
   mutate(individual.local.identifier = "S20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 set.seed(683)
@@ -127,7 +127,7 @@ aa.s10 <- AA %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 14))) %>% 
   mutate(individual.local.identifier = "S10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 set.seed(510)
@@ -135,7 +135,7 @@ aa.s6 <- AA %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2014-01-01'), as.Date('2014-02-23'), by="day"), 8))) %>% 
   mutate(individual.local.identifier = "S6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 set.seed(43375) 
@@ -143,7 +143,7 @@ aa.s3 <- AA %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(aa_days, size = 3))) %>% 
   mutate(individual.local.identifier = "S3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # combine into list
 AA_ctmm <- list(aa.comp,aa.c30,aa.c20,aa.c10,aa.c6,aa.c3,aa.s30,aa.s20,aa.s10,aa.s6,aa.s3)
@@ -164,7 +164,7 @@ RR <- df %>%
 # complete segment
 rr.comp <-  RR %>%  # 39 unique days
   mutate(individual.local.identifier = "all") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## clumped regimes.....................................
 # 30 days
@@ -172,32 +172,32 @@ rr.c30 <-  RR %>%
   filter(week(timestamp) %in% c(15:21),
          date(timestamp) > date("2010-04-12")) %>%  
   mutate(individual.local.identifier = "C30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 rr.c20 <-  RR %>% 
   filter(week(timestamp) %in% c(13:16)) %>%  
   mutate(individual.local.identifier = "C20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 rr.c10 <-  RR %>% 
   filter(week(timestamp) %in% c(18:19)) %>% 
   mutate(individual.local.identifier = "C10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 rr.c6 <-  RR %>% 
   filter(week(timestamp) == 16) %>%  
   mutate(individual.local.identifier = "C6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 rr.c3 <-  RR %>% 
   filter(week(timestamp) == 14,
          date(timestamp) < date("2010-04-05")) %>%  # 3 unique days
   mutate(individual.local.identifier = "C3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## Spread sampling regimes ..............................
 
@@ -210,7 +210,7 @@ rr.s30 <- RR %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(rr_days, 30))) %>% 
   mutate(individual.local.identifier = "S30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 set.seed(111)
@@ -218,28 +218,28 @@ rr.s20 <- RR %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(rr_days, 20))) %>% 
   mutate(individual.local.identifier = "S20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 set.seed(23)
 rr.s10 <- RR %>% 
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2010-04-01'), as.Date('2010-05-21'), by="day"), 13))) %>% 
   mutate(individual.local.identifier = "S10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 set.seed(900)
 rr.s6 <- RR %>% 
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2010-04-01'), as.Date('2010-05-21'), by="day"), 10))) %>% 
   mutate(individual.local.identifier = "S6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 set.seed(853)
 rr.s3 <- RR %>% 
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(rr_days, 4))) %>% 
   mutate(individual.local.identifier = "S3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # combine into list
 RR_ctmm <- list(rr.comp,rr.c30,rr.c20,rr.c10,rr.c6,rr.c3,rr.s30,rr.s20,rr.s10,rr.s6,rr.s3)
@@ -259,7 +259,7 @@ CE <- df %>%
 # complete segment
 ce.comp <- CE %>% 
   mutate(individual.local.identifier = "all") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
 
 ## Concentrated regimes .....................
 
@@ -268,34 +268,34 @@ ce.c30 <- CE %>%
   filter(week(timestamp) %in% c(28:37),
          date(timestamp) > date("2017-07-13")) %>% 
   mutate(individual.local.identifier = "C30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 ce.c20 <- CE %>% 
   filter(month(timestamp) == 7) %>% 
   mutate(individual.local.identifier = "C20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 ce.c10 <- CE %>% 
   filter(month(timestamp) == 8,
          date(timestamp) < date("2017-08-18")) %>% 
   mutate(individual.local.identifier = "C10") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 ce.c6 <- CE %>% 
   filter(month(timestamp) == 7,
          date(timestamp) < date("2017-07-08")) %>%
   mutate(individual.local.identifier = "C6") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 ce.c3 <- CE %>% 
   filter(month(timestamp) %in% c(7,8,9),
          week(timestamp) == 37) %>% 
   mutate(individual.local.identifier = "C3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## Spread sample regimes ......................................
 
@@ -308,7 +308,7 @@ ce.s30 <- CE %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(ce_dates, 30))) %>% 
   mutate(individual.local.identifier = "S30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 set.seed(29)
@@ -316,7 +316,7 @@ ce.s20 <- CE %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 35))) %>% 
   mutate(individual.local.identifier = "S20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 set.seed(236)
@@ -324,14 +324,14 @@ ce.s10 <- CE %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 20))) %>% 
   mutate(individual.local.identifier = "S10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0") 
 # 6 days
 set.seed(56)
 ce.s6 <- CE %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2017-07-01'), as.Date('2017-09-13'), by="day"), 9))) %>% 
   mutate(individual.local.identifier = "S6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 set.seed(8976)
@@ -339,7 +339,7 @@ ce.s3 <- CE %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(ce_dates, 3))) %>% 
   mutate(individual.local.identifier = "S3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # combine into list
 CE_ctmm <- list(ce.comp,ce.c30,ce.c20,ce.c10,ce.c6,ce.c3,ce.s30,ce.s20,ce.s10,ce.s6,ce.s3)
@@ -359,7 +359,7 @@ AA2 <- df %>%
 # complete segment
 aa2.comp <- AA2 %>% 
   mutate(individual.local.identifier = "all") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## concentrated regimes ...................
 
@@ -368,34 +368,34 @@ aa2.c30 <- AA2 %>%
   filter(week(timestamp) %in% c(44:50),
          date(timestamp) < date("2013-12-11")) %>% 
   mutate(individual.local.identifier = "C30") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 aa2.c20 <- AA2 %>% 
   filter(week(timestamp) %in% c(48,49,50,51),
          date(timestamp) > date("2013-12-02")) %>% 
   mutate(individual.local.identifier = "C20") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 aa2.c10 <- AA2 %>% 
   filter(week(timestamp) %in% c(46,47)) %>% 
   mutate(individual.local.identifier = "C10") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 aa2.c6 <- AA2 %>% 
   filter(week(timestamp) == 45,
          date(timestamp) < date("2013-11-11")) %>% 
   mutate(individual.local.identifier = "C6") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 aa2.c3 <- AA2 %>% 
   filter(week(timestamp) == 47,
          date(timestamp) < date("2013-11-22")) %>% 
   mutate(individual.local.identifier = "C3") %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ## spread sampling regimes .............................
 
@@ -408,7 +408,7 @@ aa2.s30 <- AA2 %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(aa2_days, 30))) %>% # 30 days
   mutate(individual.local.identifier = "S30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 set.seed(240) 
@@ -416,7 +416,7 @@ aa2.s20 <- AA2 %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 25))) %>% # 20 days
   mutate(individual.local.identifier = "S20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 set.seed(3)
@@ -424,7 +424,7 @@ aa2.s10 <- AA2 %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 13))) %>% # 11 days
   mutate(individual.local.identifier = "S10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 set.seed(109)
@@ -432,7 +432,7 @@ aa2.s6 <- AA2 %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(seq(as.Date('2013-11-01'), as.Date('2013-12-22'), by="day"), 8))) %>% # 7 days
   mutate(individual.local.identifier = "S6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 set.seed(309) 
@@ -440,7 +440,7 @@ aa2.s3 <- AA2 %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(aa2_days, 3))) %>% # 30 days
   mutate(individual.local.identifier = "S3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # combine into list
 AA2_ctmm <- list(aa2.comp,aa2.c30,aa2.c20,aa2.c10,aa2.c6,aa2.c3,aa2.s30,aa2.s20,aa2.s10,aa2.s6,aa2.s3)
@@ -461,7 +461,7 @@ SP <- df %>%
 sp.comp <- SP %>% # 48 days
   mutate(individual.local.identifier = "all",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 ## concentrated regimes........................
 
@@ -471,7 +471,7 @@ sp.c30 <- SP %>%
          date(timestamp) > date("2010-09-13")) %>% 
   mutate(individual.local.identifier = "C30",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 20 days
 sp.c20 <- SP %>% 
@@ -479,7 +479,7 @@ sp.c20 <- SP %>%
          date(timestamp) > date("2010-11-05")) %>% 
   mutate(individual.local.identifier = "C20",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 10 days
 sp.c10 <- SP %>% 
@@ -487,14 +487,14 @@ sp.c10 <- SP %>%
          date(timestamp) > date("2010-10-09")) %>% 
   mutate(individual.local.identifier = "C10",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 6 days
 sp.c6 <- SP %>% 
   filter(date(timestamp) < date("2010-09-23")) %>% 
   mutate(individual.local.identifier = "C6",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 3 days
 sp.c3 <- SP %>% 
@@ -502,7 +502,7 @@ sp.c3 <- SP %>%
          date(timestamp) > date("2010-11-20")) %>% 
   mutate(individual.local.identifier = "C3",
          date = date(timestamp)) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 ## spread regimes.........................
 
@@ -515,7 +515,7 @@ sp.s30 <- SP %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(sp_dates, size = 30))) %>% 
   mutate(individual.local.identifier = "S30") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 20 days
 set.seed(2109) 
@@ -523,7 +523,7 @@ sp.s20 <- SP %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(sp_dates, size = 20))) %>% 
   mutate(individual.local.identifier = "S20") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 10 days
 set.seed(444) 
@@ -531,7 +531,7 @@ sp.s10 <- SP %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(sp_dates, size = 10))) %>% 
   mutate(individual.local.identifier = "S10") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 6 days
 set.seed(852) 
@@ -539,7 +539,7 @@ sp.s6 <- SP %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(sp_dates, size = 6))) %>% 
   mutate(individual.local.identifier = "S6") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # 3 days
 set.seed(703) 
@@ -547,7 +547,7 @@ sp.s3 <- SP %>%
   mutate(date = date(timestamp)) %>% 
   filter(date %in% c(sample(sp_dates, size = 3))) %>% 
   mutate(individual.local.identifier = "S3") %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # combine into list
 SP_ctmm <- list(sp.comp,sp.c30,sp.c20,sp.c10,sp.c6,sp.c3,sp.s30,sp.s20,sp.s10,sp.s6,sp.s3)
@@ -569,7 +569,7 @@ fl.comp <- FL %>% # 64 unique days
   mutate(individual.local.identifier = "all",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # concentrated regimes.........................
 
@@ -579,7 +579,7 @@ fl.c30 <- FL %>%
   mutate(individual.local.identifier = "C30",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 20 days
 fl.c20 <- FL %>% 
@@ -588,7 +588,7 @@ fl.c20 <- FL %>%
   mutate(individual.local.identifier = "C20",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 10 days
 fl.c10 <- FL %>% 
@@ -597,7 +597,7 @@ fl.c10 <- FL %>%
   mutate(individual.local.identifier = "C10",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 6 days
 fl.c6 <- FL %>% 
@@ -606,7 +606,7 @@ fl.c6 <- FL %>%
   mutate(individual.local.identifier = "C6",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 3 days
 fl.c3 <- FL %>% 
@@ -615,7 +615,7 @@ fl.c3 <- FL %>%
   mutate(individual.local.identifier = "C3",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # spread regimes..................................
 
@@ -629,7 +629,7 @@ fl.s30 <- FL %>%
   mutate(individual.local.identifier = "S30",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 20 days
 set.seed(710)
@@ -638,7 +638,7 @@ fl.s20 <- FL %>%
   mutate(individual.local.identifier = "S20",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 10 days
 set.seed(656)
@@ -647,7 +647,7 @@ fl.s10 <- FL %>%
   mutate(individual.local.identifier = "S10",
          date = date(timestamp)) %>%
   arrange(timestamp) %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 6 days
 set.seed(3449)
@@ -656,7 +656,7 @@ fl.s6 <- FL %>%
   mutate(individual.local.identifier = "S6",
          date = date(timestamp)) %>%
   arrange(timestamp) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # 3 days
 set.seed(5993)
@@ -665,24 +665,13 @@ fl.s3 <- FL %>%
   mutate(individual.local.identifier = "S3",
          date = date(timestamp)) %>%
   arrange(timestamp) %>%
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0", keep = "date")
 
 # combine into list
 FL_ctmm <- list(fl.comp,fl.c30,fl.c20,fl.c10,fl.c6,fl.c3,fl.s30,fl.s20,fl.s10,fl.s6,fl.s3)
 
 # rename list elements
 names(FL_ctmm) <- c("all", "C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3")
-```
-
-```{r, include=FALSE, eval=FALSE}
-
-saveRDS(AA_ctmm, "Intermediate/ctmm/DATA_aa.rds")
-saveRDS(AA2_ctmm, "Intermediate/ctmm/DATA_aa2.rds")
-saveRDS(CE_ctmm, "Intermediate/ctmm/DATA_ce.rds")
-saveRDS(FL_ctmm, "Intermediate/ctmm/DATA_fl.rds")
-saveRDS(RR_ctmm, "Intermediate/ctmm/DATA_rr.rds")
-saveRDS(SP_ctmm, "Intermediate/ctmm/DATA_sp.rds")
-
 ```
 
 ### Temporal Plots
@@ -745,16 +734,6 @@ browns <- rev(colorRampPalette(hcl.colors(8, "BrwnYl"))(20)[4:16])
 ```
 
 Make plots
-
-```{r, include = FALSE, eval=FALSE}
-AA_ctmm <- readRDS("Intermediate/ctmm/DATA_aa.rds")
-AA2_ctmm <- readRDS("Intermediate/ctmm/DATA_aa2.rds")
-CE_ctmm <- readRDS("Intermediate/ctmm/DATA_ce.rds")
-FL_ctmm <- readRDS("Intermediate/ctmm/DATA_fl.rds")
-SP_ctmm <- readRDS("Intermediate/ctmm/DATA_sp.rds")
-RR_ctmm <- readRDS("Intermediate/ctmm/DATA_rr.rds")
-
-```
 
 ```{r, eval=FALSE}
 

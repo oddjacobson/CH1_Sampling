@@ -42,6 +42,8 @@ vignettes/*.pdf
 Data/non_shifted_data
 Data/30min_trkpts_formatted
 Data/trk.rds
+Intermediate/ctmm/old
+Intermediate/ctmm/error/old
 Figures
 Scripts
 RMarkdowns/Appendix
