@@ -52,14 +52,14 @@ In our study, the ILI indicated the different sampling regimes. "All" was the IL
 ```{r, eval=FALSE}
 # read in data frame 
 # filtering data from SP group, and taking the data from the complete segment - denoted as "all"
-DATA <- read.csv("../Data/ctmm/CH1_GPS_data.csv", row.names = NULL) %>% 
+DATA <- read.csv("../Data/CH1_GPS_data.csv", row.names = NULL) %>% 
   filter(group == "SP" & individual.local.identifier == "all") %>%   #select the complete segment from SP group (could pick any group)
   dplyr::select(-individual.local.identifier) %>% # remove prev ILI column
   rename(individual.local.identifier = group) # make group the new ILI
 ```
 
 ```{r, include=FALSE, eval = FALSE}
-saveRDS(DATA, "Intermediate/DATA_practice.rds")
+saveRDS(DATA, "Intermediate/ctmm/DATA_practice.rds")
 ```
 
 ```{r, include=FALSE}
@@ -76,7 +76,7 @@ Once the dataframe is in the correct format, convert it to a telemetry object an
 ```{r, message=FALSE, warning=FALSE}
 # convert data to telemetry object
 DATA <- DATA %>% 
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 Plot the data:
@@ -179,7 +179,7 @@ FIT <- ctmm.select(DATA,GUESS,trace=2)
 ```
 
 ```{r, eval=FALSE, include=FALSE}
-saveRDS(FIT, "Intermediate/FIT_practice.rds")
+saveRDS(FIT, "Intermediate/ctmm/FIT_practice.rds")
 ```
 
 ```{r, include=FALSE}
@@ -227,7 +227,7 @@ plot(DATA,UD = UD, main = "AKDE Home Range Estimate")
 
 
 ```{r, include=FALSE, eval=FALSE}
-saveRDS(UD, "Intermediate/UD_practice.rds")
+saveRDS(UD, "Intermediate/ctmm/UD_practice.rds")
 
 png(filename = "Figures/Example_AKDE.png", width = 600, height = 600, units = "px")
 plot(DATA,UD = UD, main = "AKDE Home Range Estimate")
@@ -266,7 +266,7 @@ DATA_bulk <- read.csv("Data/CH1_GPS_data.csv", row.names = NULL) %>%
   filter(individual.local.identifier == "all") %>% # take only complete segments
   dplyr::select(-individual.local.identifier) %>% # remove prev ILI column
   rename(individual.local.identifier = group) %>% # make group the new ILI
-  as.telemetry(projection = "+proj=utm +zone=16 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  as.telemetry(projection = "+proj=utm +zone=10 +north +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # note: when there are multiple individual.local.identifiers, as.telemetry makes a list, with each
 # individual.local.identifier being an element in the list
@@ -301,9 +301,9 @@ names(UDs) <- names(FITs) <- names(SVFs) <- names(DATA_bulk)
 ```
 
 ```{r, eval = FALSE, include = FALSE}
-saveRDS(SVFs, "Intermediate/SVF_bulk_practice.rds")
-saveRDS(FITs, "Intermediate/FIT_bulk_practice.rds")
-saveRDS(UDs, "Intermediate/UD_bulk_practice.rds")
+saveRDS(SVFs, "Intermediate/ctmm/SVF_bulk_practice.rds")
+saveRDS(FITs, "Intermediate/ctmm/FIT_bulk_practice.rds")
+saveRDS(UDs, "Intermediate/ctmm/UD_bulk_practice.rds")
 ```
 
 ```{r, eval = FALSE}

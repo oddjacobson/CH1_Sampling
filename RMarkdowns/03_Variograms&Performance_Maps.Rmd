@@ -149,7 +149,7 @@ aa_data_sf <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds") %>%
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% # remove complete segment to map only sampling regimes
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0") # change to utm
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0") # change to utm
 
 # same procedure with HR mean boundary
 aa_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>% 
@@ -172,7 +172,7 @@ aa_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # again with HR confidence boundaries
 aa_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>% 
@@ -195,7 +195,7 @@ aa_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # do the same with locations from complete segment (to plot also the missing points)
 aa_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds") %>% 
@@ -206,7 +206,7 @@ aa_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 
@@ -240,7 +240,7 @@ for (i in ids){
 aa_thinned_data <- as.data.frame(do.call(rbind, aa_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -272,8 +272,8 @@ p1 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(235.200,239.500), ylim=c(608.200, 611.400)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
@@ -307,7 +307,7 @@ ggsave(here::here("Figures", file.name.performance),
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 # read in plot
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_07_11_140137.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/AA_performance_plots_2023_09_13_122931.jpg")
 ```
 
 ### II. RR Group
@@ -389,7 +389,7 @@ rr_data_sf <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds") %>%
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
 rr_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>% 
@@ -412,7 +412,7 @@ rr_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
 rr_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>% 
@@ -435,7 +435,7 @@ rr_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_rr_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
 rr_all_data <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds") %>% 
@@ -446,7 +446,7 @@ rr_all_data <- readRDS("Intermediate/ctmm/error/DATA_rr_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 
@@ -478,7 +478,7 @@ for (i in ids){
 rr_thinned_data <- as.data.frame(do.call(rbind, rr_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -502,8 +502,8 @@ p2 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(677.000,680.000), ylim=c(1160.000, 1163.500)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(235.800,239.200), ylim=c(607.200, 610.700)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
@@ -536,7 +536,7 @@ ggsave(here::here("Figures", file.name.performance),
 ```
 
 ```{r, echo=FALSE, fig.cap="Home Range Estimates from RR sampling regimes plotted over data", fig.align='center', out.width = '95%'}
-knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_07_11_140836.jpg")
+knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/RR_performance_plots_2023_09_13_123451.jpg")
 ```
 
 ### III. CE Group
@@ -603,7 +603,7 @@ ce_data_sf <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds") %>%
   mutate(id = factor(identity, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
 ce_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>% 
@@ -626,7 +626,7 @@ ce_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
 ce_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>% 
@@ -649,7 +649,7 @@ ce_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_ce_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
 ce_all_data <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds") %>% 
@@ -660,7 +660,7 @@ ce_all_data <- readRDS("Intermediate/ctmm/error/DATA_ce_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 ```{r, include = FALSE, eval = FALSE}
@@ -691,7 +691,7 @@ for (i in ids){
 ce_thinned_data <- as.data.frame(do.call(rbind, ce_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -717,8 +717,8 @@ p3 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-  coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(675.700,677.500), ylim=c(1162.000, 1164.100)) +
+  coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+          xlim=c(234.500,236.500), ylim=c(609.400, 611.400)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
@@ -759,7 +759,7 @@ ggsave(here::here("Figures", file.name.performance),
        units = "px")
 ```
 
-```{r, echo=FALSE, fig.cap="Home Range Estimates from AA sampling regimes plotted over data", fig.align='center', out.width = '95%'}
+```{r, echo=FALSE, fig.cap="Home Range Estimates from CE sampling regimes plotted over data", fig.align='center', out.width = '95%'}
 knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures/CE_performance_plots_2023_07_11_142209.jpg")
 ```
 
@@ -843,7 +843,7 @@ aa2_data_sf <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds") %>%
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
 aa2_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>% 
@@ -866,7 +866,7 @@ aa2_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
 aa2_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>% 
@@ -889,7 +889,7 @@ aa2_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_aa2_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
 aa2_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds") %>% 
@@ -900,7 +900,7 @@ aa2_all_data <- readRDS("Intermediate/ctmm/error/DATA_aa2_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 
@@ -932,7 +932,7 @@ for (i in ids){
 aa2_thinned_data <- as.data.frame(do.call(rbind, aa2_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -955,8 +955,8 @@ p4 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(676.500,680.000), ylim=c(1161.000, 1164.000)) +
+   coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(235.500,238.300), ylim=c(608.500, 611.200)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
@@ -1069,7 +1069,7 @@ sp_data_sf <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds") %>%
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
 sp_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>% 
@@ -1092,7 +1092,7 @@ sp_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
 sp_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>% 
@@ -1115,7 +1115,7 @@ sp_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_sp_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
 sp_all_data <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds") %>% 
@@ -1126,7 +1126,7 @@ sp_all_data <- readRDS("Intermediate/ctmm/error/DATA_sp_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 
@@ -1158,7 +1158,7 @@ for (i in ids){
 sp_thinned_data <- as.data.frame(do.call(rbind, sp_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -1181,8 +1181,8 @@ p5 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(676.250,679.000), ylim=c(1159.500, 1162.500)) +
+   coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(235.430,237.870), ylim=c(606.900, 609.550)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
@@ -1295,7 +1295,7 @@ fl_data_sf <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds") %>%
          id = factor(id, levels = c("C30", "C20", "C10","C6", "C3", "S30", "S20", "S10", "S6", "S3"))) %>%
   dplyr::select(id, geometry) %>% 
   filter(!id == "all") %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR mean boundary
 fl_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>% 
@@ -1318,7 +1318,7 @@ fl_akde_sf <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>%
   filter(str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # HR confidence boundaries
 fl_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>% 
@@ -1341,7 +1341,7 @@ fl_akde_CI <- readRDS("Intermediate/ctmm/error/AKDE_fl_error.rds") %>%
   filter(!str_detect(row.names(.), "est"),
          !id == "all") %>%
   dplyr::select(id, geometry) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 # get all points
 fl_all_data <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds") %>% 
@@ -1352,7 +1352,7 @@ fl_all_data <- readRDS("Intermediate/ctmm/error/DATA_fl_error.rds") %>%
   dplyr::select(id, geometry) %>% 
   filter(id == "all")  %>% 
   dplyr::select(-id) %>% 
-  st_transform("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_transform("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ```
 
 
@@ -1384,7 +1384,7 @@ for (i in ids){
 fl_thinned_data <- as.data.frame(do.call(rbind, fl_thinned_data)) %>%
   rownames_to_column("id") %>% 
   mutate(id = sub("\\..*", "", id)) %>% 
-  st_as_sf(crs = "+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  st_as_sf(crs = "+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 ```
 
@@ -1407,8 +1407,8 @@ p6 <- ggplot() +
                               width_hint = 0.3,
                               height = unit(4,'pt'),
                               style = 'ticks') +
-   coord_sf(datum = st_crs("+proj=utm +zone=16 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
-           xlim=c(675.500,680.000), ylim=c(1163.000, 1167.000)) +
+   coord_sf(datum = st_crs("+proj=utm +zone=10 +north +datum=WGS84 +units=km +no_defs +ellps=WGS84 +towgs84=0,0,0"), 
+           xlim=c(234.500,238.600), ylim=c(610.100, 614.100)) +
   scale_color_manual(values = colors, labels = labels, name = "") +
   scale_shape_manual(values = shape, labels = labels, name = "") +
   scale_size_manual(values = size, labels = labels, name = "") +
