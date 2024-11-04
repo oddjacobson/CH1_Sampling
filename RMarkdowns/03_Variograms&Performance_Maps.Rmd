@@ -51,7 +51,6 @@ aa_fit <- readRDS("../Intermediate/ctmm/error/FITS_aa_error.rds") # read in mode
 
 ```{r, include=FALSE, eval=FALSE}
 aa_svf <- readRDS("Intermediate/ctmm/error/SVF_aa_error.rds") # read in variograms
-
 # save image of variograms plotted with model fits
 png(filename = "Figures/AA_SVF.png", width = 3000, height = 2200, units = "px")
 plot_vario(aa_svf, aa_fit, 
@@ -116,7 +115,7 @@ knitr::kable(aa_fits_summaries,
                            "Model Name",
                            "HR Crossing Time (hours)",
                            "Effective Sample Size"),
-             caption = "Model summary information for AA group")
+             caption = "Model summary information for AA group") 
 ```
 
 

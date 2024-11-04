@@ -1,0 +1,748 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\usepackage{fvextra} \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+\usepackage{float}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Appendix 1: Home Range Estimation using Autocorrelated Kernel Density Estimation},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Appendix 1: Home Range Estimation using Autocorrelated Kernel
+Density Estimation}
+\author{}
+\date{\vspace{-2.5em}\today}
+
+\begin{document}
+\maketitle
+
+\subsection{I. Background}\label{i.-background}
+
+The purpose of this appendix is to detail the steps to estimating a home
+range (HR) using continuous-time movement modelling and the \emph{ctmm}
+package. This document can be used as a practical guide, where one can
+use our practice dataset or one's own data to walk-through the
+analytical process.
+
+Accounting for autocorrelation is important so that we avoid biases in
+our results. However, it requires some additional steps compared to most
+conventional estimators, which is why we describe the process and
+provide an example workflow. We strongly recommend going through the
+\emph{ctmm} vignettes (see
+\url{https://ctmm-initiative.github.io/ctmm/index.html}) for a more
+detailed review.
+
+Generating a home range estimate from movement data using
+continuous-time movement modelling involves three main steps: 1)
+variogram inspection, 2) model fitting and selection, and 3)
+Autocorrelated Kernel Density Estimation (AKDE). This process can either
+be done using the \emph{ctmm} package in the R environment for
+statistical computing (R Core Team 2022), or using the \emph{ctmmweb}
+point-and-click graphical user interface (Calabrese et al. 2021), which
+streamlines the modelling steps, helping users conduct home range
+analysis without the need to know the R programming language. We
+describe the process using R below:
+
+The first step is to load the necessary packages and prepare the data
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# you can install ctmm from CRAN, but better to get the development version for recent updates}
+\NormalTok{devtools}\SpecialCharTok{::}\FunctionTok{install\_github}\NormalTok{(}\StringTok{"ctmm{-}initiative/ctmm"}\NormalTok{)}
+
+\CommentTok{\# load packages}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\FunctionTok{library}\NormalTok{(ctmm)}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{II. Prepare Data}\label{ii.-prepare-data}
+
+The data must have the same format as the following dataframe with the
+same column names. These are the same format required by
+\emph{Movebank}. Either you can manually edit the dataframe and then
+convert to a telemetry object, or put data on Movebank and import from
+there, which will automatically put the data in the correct format.
+
+Note: \texttt{individual.local.identifier} (ILI) specifies the unique ID
+(usually individual or group) that you want the home range estimate for.
+At the bottom of the document, we also include some example code of how
+to do all of the below analysis in a single step for a list of several
+ILIs.
+
+In our study, the ILI indicated the different sampling regimes. ``All''
+was the ILI for the complete segments. For this walkthrough, we will use
+the data from the complete segment of SP group, and change the ILI to
+the group.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# read in data frame }
+\CommentTok{\# filtering data from SP group, and taking the data from the complete segment {-} denoted as "all"}
+\NormalTok{DATA }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"../Data/CH1\_GPS\_data.csv"}\NormalTok{, }\AttributeTok{row.names =} \ConstantTok{NULL}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(group }\SpecialCharTok{==} \StringTok{"SP"} \SpecialCharTok{\&}\NormalTok{ individual.local.identifier }\SpecialCharTok{==} \StringTok{"all"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}   \CommentTok{\#select the complete segment from SP group (could pick any group)}
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{individual.local.identifier) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# remove prev ILI column}
+  \FunctionTok{rename}\NormalTok{(}\AttributeTok{individual.local.identifier =}\NormalTok{ group) }\CommentTok{\# make group the new ILI}
+\end{Highlighting}
+\end{Shaded}
+
+The data should should look like this (these are the first six rows):
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(DATA)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   individual.local.identifier           timestamp location.long location.lat
+## 1                          SP 2010-09-12 05:00:00     -125.3790     5.500800
+## 2                          SP 2010-09-12 05:30:00     -125.3791     5.500413
+## 3                          SP 2010-09-12 06:00:00     -125.3793     5.499555
+## 4                          SP 2010-09-12 06:30:00     -125.3795     5.498766
+## 5                          SP 2010-09-12 07:00:00     -125.3792     5.497902
+## 6                          SP 2010-09-12 07:30:00     -125.3786     5.497841
+\end{verbatim}
+
+Once the dataframe is in the correct format, convert it to a telemetry
+object and specify the UTM projection:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# convert data to telemetry object}
+\NormalTok{DATA }\OtherTok{\textless{}{-}}\NormalTok{ DATA }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{as.telemetry}\NormalTok{(}\AttributeTok{projection =} \StringTok{"+proj=utm +zone=10 +north +datum=WGS84 +units=m +no\_defs +ellps=WGS84 +towgs84=0,0,0"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Plot the data:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# plot location data}
+\FunctionTok{plot}\NormalTok{(DATA, }\AttributeTok{main =} \StringTok{"Location Data"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_Data} 
+
+}
+
+\caption{Location data from the complete segment of SP group}\label{fig:unnamed-chunk-10}
+\end{figure}
+
+\subsection{III. Variogram Inspection}\label{iii.-variogram-inspection}
+
+Variograms plot the semi-variance (y-axis), which is a measure of the
+average squared displacement, as a function of the time-lag that
+separates any pair of observed locations (Diggle and Ribeiro 2007; Silva
+et al. 2021). Variograms play two major roles in the \emph{ctmm}
+workflow: first, they provide an unbiased visual diagnostic to assess
+the autocorrelation structure present in the data, and second, they
+inform whether the data shows evidence of range residency (Silva et al.
+2021). Asymptoting curves in a variogram indicate range residency. Where
+the asymptote aligns with the x-axis is a measure of the necessary
+time-lag between positions to assume independence (Silva et al. 2021).
+It is also a rough estimate of the home range crossing time (Christen H.
+Fleming and Calabrese 2017). If the curve continues to increase without
+flattening, the animals are either non-resident (i.e.~home range drift
+or migration), or not tracked long enough to capture the full extent of
+their home range (Calabrese, Fleming, and Gurarie 2016).
+
+Once the data are confirmed to represented range-restricted movement, we
+can proceeded with model fitting and selection. It is necessary to
+confirm range-residency before conducting home range estimation because,
+while ctmm is capable of fitting both range-resident (the default) and
+endlessly diffusing movement models, only the first set are appropriate
+for home range estimation.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{SVF }\OtherTok{\textless{}{-}} \FunctionTok{variogram}\NormalTok{(DATA, }\AttributeTok{dt =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{10}\NormalTok{) }\SpecialCharTok{\%\#\%} \StringTok{"hour"}\NormalTok{) }\CommentTok{\# dt argument changes the width of the time{-}lag bins (makes variogram smoother)}
+\FunctionTok{plot}\NormalTok{(SVF, }\AttributeTok{main =} \StringTok{"Empirical Variogram"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_SVF} 
+
+}
+
+\caption{Empirical variogram from the complete segment of SP group}\label{fig:unnamed-chunk-13}
+\end{figure}
+
+This is a plot of the empricial varigram. The line asymptotes at
+approximately three days. This is roughly the average home range
+crossing time. This is also approximately how far apart locations need
+to be in time for them to be independent
+(\url{https://ctmm-initiative.github.io/ctmm/articles/variogram.html}).
+
+\subsection{IV. Accounting for Error}\label{iv.-accounting-for-error}
+
+There are several options for accounting for error depending on whether
+calibration data (e.g.~DOP, HDOP, etc.) exists for the user's GPS device
+or not. If these data exists, follow the vignette here:
+\url{https://ctmm-initiative.github.io/ctmm/articles/error.html} to
+learn how to model and calibrate these errors.
+
+Here, we describe how to handle the errors when no calibration data
+exists. To account for errors without calibration data, we use a prior
+for the root-mean-square User Equivalent Range Error (RMS UERE) (C.
+Fleming et al. 2020). According to the \texttt{ctmm} developers, a 10-15
+meter error radius is generally sufficient to account for location error
+with GPS data. We assign a mean prior of 20 meters with reasonable
+credible intervals to account for additional error that could be caused
+by group spread or variation in researcher position with regard to the
+center of the group.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# FITTING UNCALIBRATED DATA UNDER A PRIOR}
+
+\CommentTok{\# assign 20{-}meter RMS UERE}
+\FunctionTok{uere}\NormalTok{(DATA) }\OtherTok{\textless{}{-}} \DecValTok{20}
+
+\CommentTok{\# change uncertainty }
+\NormalTok{UERE }\OtherTok{\textless{}{-}} \FunctionTok{uere}\NormalTok{(DATA)}
+\FunctionTok{summary}\NormalTok{(UERE) }\CommentTok{\# original credible interval is zero}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## , , horizontal
+## 
+##     low est high
+## all  20  20   20
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# give DOF a smaller value (default is INF which produces no credible intervals)}
+\NormalTok{UERE}\SpecialCharTok{$}\NormalTok{DOF[] }\OtherTok{\textless{}{-}} \DecValTok{2}
+
+\CommentTok{\# now there are reasonable credible intervals}
+\FunctionTok{summary}\NormalTok{(UERE)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## , , horizontal
+## 
+##          low est     high
+## all 6.960018  20 33.38156
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# assign the prior to the data}
+\FunctionTok{uere}\NormalTok{(DATA) }\OtherTok{\textless{}{-}}\NormalTok{ UERE}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{V. Movement Model
+Selection}\label{v.-movement-model-selection}
+
+Model fitting also involves two steps: first the \texttt{ctmm.guess}
+function uses the shape of the empirical variogram (and error
+information) to generate starting values required for the non-linear
+models, and second, the \texttt{ctmm.select} function uses the values
+calculated from \texttt{ctmm.guess} to fit a range of alternative
+stationary (and range-restricted) movement models using Maximum
+Likelihood (Christen H. Fleming et al. 2014). Models are ranked by AICc
+(Akaike information criterion) allowing us to evaluate which model or
+models best predict the data. This process permits identification and
+fit of a stationary movement model that corresponds to the observed
+movement behavior of the animal (Christen H. Fleming et al. 2014).
+
+It is worth noting that here, stationary means that the underlying
+movement processes are assumed to be consistent throughout the duration
+of the data. Movement model parameters represent time-averaged values,
+which has important implications on how data should be segmented for
+home range analysis. If the underlying parameters change drastically
+within the sample---particularly the mean location---then the stationary
+assumption has been violated. Therefore, it is common practice to
+segment the data when the parameters change and estimate separate
+ranges. This is consistent with Burt's original concept of the home
+range where, for example, he stated winter and summer ranges for
+migratory species should be considered separately with the travel
+between as transit (Burt 1943). In our case, all sampling regimes were
+from single, stationary ranges which negated any need for further
+segmentation.
+
+The pool of potential movement models which involve home range behavior
+include:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi})}
+\item
+  \emph{Independent and Identically Distributed} (IID) -- location data
+  has uncorrelated positions and velocities.
+\item
+  \emph{Ornstein--Uhlenbeck} (OU) -- location data has autocorrelated
+  positions and uncorrelated velocities.
+\item
+  \emph{OU Foraging} (OUF) -- location data has autocorrelated positions
+  and velocities (Calabrese, Fleming, and Gurarie 2016; C. Fleming et
+  al. 2014; Christen H. Fleming et al. 2014)
+\end{enumerate}
+
+OU and OUF can be further specified with isotropic or anisotropic
+versions of each. Isotropic means diffusion is equal on every extent of
+the home range, while anisotropic means diffusion is asymmetrical (Silva
+et al. 2021).
+
+Endlessly diffusing movement models (non-HR models) such as
+\emph{brownian motion} (BM) or \emph{integrated OU} (IOU) cannot be
+statistically compared to HR models using maximum likelihood (see
+\texttt{?ctmm.select}). To fit these movement models, one must manually
+specify them.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# get starting values for models}
+\NormalTok{GUESS }\OtherTok{\textless{}{-}} \FunctionTok{ctmm.guess}\NormalTok{(DATA,}\AttributeTok{interactive=}\ConstantTok{FALSE}\NormalTok{, }
+                    \AttributeTok{CTMM=}\FunctionTok{ctmm}\NormalTok{(}\AttributeTok{error=}\ConstantTok{TRUE}\NormalTok{), }\CommentTok{\# important for including error information}
+                    \AttributeTok{variogram =}\NormalTok{ SVF) }
+
+\CommentTok{\# fit models and select top one, trace = 2 allows you to see progress}
+\NormalTok{FIT }\OtherTok{\textless{}{-}} \FunctionTok{ctmm.select}\NormalTok{(DATA,GUESS,}\AttributeTok{trace=}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# see model summary for top model}
+\FunctionTok{summary}\NormalTok{(FIT)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $name
+## [1] "OUF anisotropic error"
+## 
+## $DOF
+##      mean      area diffusion     speed 
+##  53.47721  86.17602 251.31469 400.79579 
+## 
+## $CI
+##                                low       est      high
+## area (square kilometers)  2.108771  2.635754  3.220627
+## τ[position] (hours)       9.226870 12.031009 15.687352
+## τ[velocity] (minutes)    26.346700 31.798288 38.377904
+## speed (kilometers/day)    4.791723  5.038385  5.284885
+## diffusion (hectares/day) 42.700768 48.513870 54.692545
+## error all (meters)       13.481921 17.779238 22.068097
+\end{verbatim}
+
+The top model selected for our practice dataset was \emph{OUF
+anisotropic}. Above is the summary information for that model. The
+\texttt{\$DOF} specifies the effective sample sizes. The most important
+one for home range estimation being under \texttt{area} which indicates
+the number of statistically independent points (or approximately the
+number of home range crossings -- see Methods in the main text).
+
+The \texttt{area\ (square\ kilometers)} slot indicates the Gaussian
+area, which is an estimate of spatial variance, but is not our AKDE
+area. \texttt{tau{[}position{]}\ (hours)} is the tau referenced in the
+main text. This is time necessary between locations for them to be
+independent, or approximately the home range crossing timescale.
+\texttt{tau{[}velocity{]}\ (minutes)} is the timescale necessary for the
+velocities to be independent. Estimates of speed (i.e.~proportional to
+average daily travel distance) and diffusion rate are also included.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# plot empirical variogram with best model}
+\FunctionTok{plot}\NormalTok{(SVF, }\AttributeTok{CTMM =}\NormalTok{ FIT, }\AttributeTok{main =} \StringTok{"Variogram and Fitted Model"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_SVF_model} 
+
+}
+
+\caption{Top movement model fitted to the empirical variogram}\label{fig:unnamed-chunk-21}
+\end{figure}
+
+\subsection{VI. AKDE Home Range
+Estimation}\label{vi.-akde-home-range-estimation}
+
+The final step is to calculate an autocorrelated kernel density
+home-range estimate (AKDE) using the eponymously named \texttt{akde}
+function (Calabrese, Fleming, and Gurarie 2016). This function takes the
+movement data and the corresponding fitted model and returns: a
+utilization distribution (UD) object corresponding to the range
+distribution, information on the optimal bandwidth, point estimates and
+confidence intervals for HR area, and a measure of the effective sample
+size of the data for home range estimation. For the sampling regimes in
+our study, we also included the \texttt{weights\ =\ TRUE} option, which
+helps correct for irregular and missing data by down-weighting
+over-sampled portions of the data and up-weighting under-sampled
+portions (C. H. Fleming et al. 2018). This helps to offset sampling
+bias, but is not sufficient if large portions of the true range are
+missing from the sampled data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# get UD using AKDE}
+\NormalTok{UD }\OtherTok{\textless{}{-}} \FunctionTok{akde}\NormalTok{(DATA, FIT, }\AttributeTok{weights =} \ConstantTok{TRUE}\NormalTok{)}
+
+\CommentTok{\# plot UD over location data}
+\FunctionTok{plot}\NormalTok{(DATA,}\AttributeTok{UD =}\NormalTok{ UD, }\AttributeTok{main =} \StringTok{"AKDE Home Range Estimate"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_AKDE} 
+
+}
+
+\caption{Home range estimate (95\% utilization distribution) mean contour and 95\% confidence intervals plotted over location data}\label{fig:unnamed-chunk-24}
+\end{figure}
+
+Below is the summary information:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(UD)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## $DOF
+##      area bandwidth 
+##  86.17602 154.42060 
+## 
+## $CI
+##                               low      est     high
+## area (square kilometers) 1.779804 2.224578 2.718211
+## 
+## attr(,"class")
+## [1] "area"
+\end{verbatim}
+
+The effective sample size (DOF area) is the same as from the fitted
+model. In this case, there was about 81 observed home range crossings in
+the data. The \texttt{area\ (square\ kilometers)} slot shows the
+estimated home range area and 95\% confidence intervals.
+
+\subsection{VII. Bulk analysis for several individuals or
+groups}\label{vii.-bulk-analysis-for-several-individuals-or-groups}
+
+Below is code to demonstrate how to perform the above analysis with
+multiple individuals or groups in one step using a loop (may take a
+little while to run, \textasciitilde20min).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# PREPARE DATA }
+\CommentTok{\# take only complete segments (all)}
+\CommentTok{\# make group the new individual.local.identifer (ILI)}
+\CommentTok{\# change to tele object}
+\NormalTok{DATA\_bulk }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"Data/CH1\_GPS\_data.csv"}\NormalTok{, }\AttributeTok{row.names =} \ConstantTok{NULL}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{filter}\NormalTok{(individual.local.identifier }\SpecialCharTok{==} \StringTok{"all"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# take only complete segments}
+\NormalTok{  dplyr}\SpecialCharTok{::}\FunctionTok{select}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{individual.local.identifier) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# remove prev ILI column}
+  \FunctionTok{rename}\NormalTok{(}\AttributeTok{individual.local.identifier =}\NormalTok{ group) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# make group the new ILI}
+  \FunctionTok{as.telemetry}\NormalTok{(}\AttributeTok{projection =} \StringTok{"+proj=utm +zone=10 +north +datum=WGS84 +units=m +no\_defs +ellps=WGS84 +towgs84=0,0,0"}\NormalTok{)}
+
+\CommentTok{\# note: when there are multiple individual.local.identifiers, as.telemetry makes a list, with each}
+\CommentTok{\# individual.local.identifier being an element in the list}
+\CommentTok{\# variograms, model fits, and UDs follow the same list format}
+
+\CommentTok{\# assign UERE error info}
+\FunctionTok{uere}\NormalTok{(DATA\_bulk) }\OtherTok{\textless{}{-}}\NormalTok{ UERE }\CommentTok{\# using same prior as earlier}
+
+\CommentTok{\# make empty lists to be filled by below loop}
+\NormalTok{UDs }\OtherTok{\textless{}{-}}\NormalTok{ FITs }\OtherTok{\textless{}{-}}\NormalTok{ SVFs }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+
+\DocumentationTok{\#\# BULK CALCULATIONS}
+\CommentTok{\# for every ILI, make a variogram (SVF), get starter values (GUESS), select model (FIT), and calculate AKDE (UD)}
+\CommentTok{\# grid argument in akde aligns UDs so that overlap function is possible if desired later on}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{length}\NormalTok{(DATA\_bulk))\{}
+\NormalTok{  SVFs[[i]] }\OtherTok{\textless{}{-}} \FunctionTok{variogram}\NormalTok{(DATA\_bulk[[i]])}
+\NormalTok{  GUESS }\OtherTok{\textless{}{-}} \FunctionTok{ctmm.guess}\NormalTok{(DATA\_bulk[[i]],}
+                      \AttributeTok{CTMM=}\FunctionTok{ctmm}\NormalTok{(}\AttributeTok{error=}\ConstantTok{TRUE}\NormalTok{),}
+                      \AttributeTok{interactive=}\ConstantTok{FALSE}\NormalTok{, }
+                      \AttributeTok{variogram =}\NormalTok{ SVFs[[i]])}
+\NormalTok{  FITs[[i]] }\OtherTok{\textless{}{-}} \FunctionTok{ctmm.select}\NormalTok{(DATA\_bulk[[i]],}
+\NormalTok{                           GUESS,}
+                           \AttributeTok{trace=}\DecValTok{2}\NormalTok{)}
+\NormalTok{  UDs[[i]] }\OtherTok{\textless{}{-}} \FunctionTok{akde}\NormalTok{(DATA\_bulk[[i]],}
+\NormalTok{                   FITs[[i]], }
+                   \AttributeTok{weights =} \ConstantTok{TRUE}\NormalTok{, }
+                   \AttributeTok{grid=}\FunctionTok{list}\NormalTok{(}\AttributeTok{dr=}\DecValTok{10}\NormalTok{, }\AttributeTok{align.to.origin=}\ConstantTok{TRUE}\NormalTok{)) }
+\NormalTok{\}}
+
+\CommentTok{\# make names of variograms, fits, and UDs the same as data}
+\FunctionTok{names}\NormalTok{(UDs) }\OtherTok{\textless{}{-}} \FunctionTok{names}\NormalTok{(FITs) }\OtherTok{\textless{}{-}} \FunctionTok{names}\NormalTok{(SVFs) }\OtherTok{\textless{}{-}} \FunctionTok{names}\NormalTok{(DATA\_bulk)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# make color blind pallette}
+\NormalTok{colorblind\_pal }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"\#E69F00"}\NormalTok{, }\StringTok{"\#56B4E9"}\NormalTok{, }\StringTok{"\#009E73"}\NormalTok{, }\StringTok{"\#F0E442"}\NormalTok{, }\StringTok{"\#D55E00"}\NormalTok{, }\StringTok{"\#CC79A7"}\NormalTok{)}
+
+\CommentTok{\# plot together}
+\FunctionTok{plot}\NormalTok{(UDs, }\AttributeTok{col.DF=}\NormalTok{colorblind\_pal)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_AKDE_bulk_together} 
+
+}
+
+\caption{Home range estimate (95\% utilization distribution) mean contours and 95\% confidence intervals from the six complete segments}\label{fig:unnamed-chunk-31}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# plot seperate}
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{3}\NormalTok{))}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{length}\NormalTok{(UDs))\{}
+  \FunctionTok{plot}\NormalTok{(DATA\_bulk[[i]], UDs[[i]], }
+       \AttributeTok{col =}\NormalTok{ colorblind\_pal[[i]], }
+       \AttributeTok{col.DF=}\NormalTok{colorblind\_pal[[i]], }
+       \AttributeTok{main =} \FunctionTok{names}\NormalTok{(UDs[i]))}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_AKDE_bulk_seperate} 
+
+}
+
+\caption{Home range estimate (95\% utilization distribution) contours and 95\% confidence intervals from the six complete segments plotted separately}\label{fig:unnamed-chunk-34}
+\end{figure}
+
+You can compare home range areas using:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{meta}\NormalTok{(UDs, }\AttributeTok{variable =} \StringTok{"area"}\NormalTok{, }\AttributeTok{main =} \StringTok{"HR areas"} \AttributeTok{col =}\NormalTok{ colorblind\_pal)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}[H]
+
+{\centering \includegraphics[width=0.75\linewidth,]{../Figures/Example_meta} 
+
+}
+
+\caption{Plot showing the comparison of home range area and confidence intervals for all six complete segments. The colors correspond to the same colors in the home range plots. The mean area across the six complete segments is shown in black on the bottom}\label{fig:unnamed-chunk-38}
+\end{figure}
+
+\phantomsection\label{refs}
+\begin{CSLReferences}{1}{0}
+\bibitem[\citeproctext]{ref-burt43}
+Burt, William Henry. 1943. {``Territoriality and Home Range Concepts as
+Applied to Mammals.''} \emph{Journal of Mammalogy} 24 (3): 346--52.
+\url{https://doi.org/10.2307/1374834}.
+
+\bibitem[\citeproctext]{ref-calabrese_etal16}
+Calabrese, Justin M., Chris H. Fleming, and Eliezer Gurarie. 2016.
+{``Ctmm: An r Package for Analyzing Animal Relocation Data as a
+Continuous-Time Stochastic Process.''} \emph{Methods in Ecology and
+Evolution} 7 (9): 1124--32.
+https://doi.org/\url{https://doi.org/10.1111/2041-210X.12559}.
+
+\bibitem[\citeproctext]{ref-calabrese_etal21}
+Calabrese, Justin M., Christen H. Fleming, Michael J. Noonan, and
+Xianghui Dong. 2021. {``Ctmmweb: A Graphical User Interface for
+Autocorrelation-Informed Home Range Estimation.''} \emph{Wildlife
+Society Bulletin} 45 (1): 162--69.
+\url{https://doi.org/10.1002/wsb.1154}.
+
+\bibitem[\citeproctext]{ref-diggle_ribeiro07}
+Diggle, Peter, and Paulo J. Ribeiro. 2007. \emph{Model-Based
+Geostatistics}. Springer Series in Statistics. New York, NY: Springer.
+
+\bibitem[\citeproctext]{ref-fleming_etal18}
+Fleming, C. H., D. Sheldon, W. F. Fagan, P. Leimgruber, T. Mueller, D.
+Nandintsetseg, M. J. Noonan, et al. 2018. {``Correcting for Missing and
+Irregular Data in Home-Range Estimation.''} \emph{Ecological
+Applications} 28 (4): 1003--10. \url{https://doi.org/10.1002/eap.1704}.
+
+\bibitem[\citeproctext]{ref-fleming_calabrese17}
+Fleming, Christen H., and Justin M. Calabrese. 2017. {``A New Kernel
+Density Estimator for Accurate Home-Range and Species-Range Area
+Estimation.''} \emph{Methods in Ecology and Evolution} 8 (5): 571--79.
+\url{https://doi.org/10.1111/2041-210X.12673}.
+
+\bibitem[\citeproctext]{ref-fleming_etal14}
+Fleming, Christen H., Justin M. Calabrese, Thomas Mueller, Kirk A.
+Olson, Peter Leimgruber, and William F. Fagan. 2014. {``Non-Markovian
+Maximum Likelihood Estimation of Autocorrelated Movement Processes.''}
+\emph{Methods in Ecology and Evolution} 5 (5): 462--72.
+\url{https://doi.org/10.1111/2041-210X.12176}.
+
+\bibitem[\citeproctext]{ref-fleming_etal14a}
+Fleming, Christen, Justin Calabrese, Thomas Mueller, Kirk Olson, Peter
+Leimgruber, and William Fagan. 2014. {``From Fine-Scale Foraging to Home
+Ranges: A Semivariance Approach to Identifying Movement Modes Across
+Spatiotemporal Scales.''} \emph{The American Naturalist} 183 (May):
+E154--67. \url{https://doi.org/10.1086/675504}.
+
+\bibitem[\citeproctext]{ref-fleming_etal20}
+Fleming, Christen, Jonathan Drescher-Lehman, Michael Noonan, Tom Akre,
+Donald Brown, Madaline Cochrane, Dejid Nandintsetseg, et al. 2020.
+\emph{A Comprehensive Framework for Handling Location Error in Animal
+Tracking Data}. \url{https://doi.org/10.1101/2020.06.12.130195}.
+
+\bibitem[\citeproctext]{ref-rcoreteam22}
+R Core Team. 2022. {``R: A Language and Environment for Statistical
+Computing.''} Vienna, Austria: R Foundation for Statistical Computing.
+\url{https://www.R-project.org/}.
+
+\bibitem[\citeproctext]{ref-silva_etal21}
+Silva, Inês, Christen H. Fleming, Michael J. Noonan, Jesse Alston, Cody
+Folta, William Fagan, and Justin M. Calabrese. 2021.
+{``Autocorrelation-Informed Home Range Estimation: A Review and
+Practical Guide.''} Preprint. EcoEvoRxiv.
+\url{https://doi.org/10.32942/osf.io/23wq7}.
+
+\end{CSLReferences}
+
+\end{document}

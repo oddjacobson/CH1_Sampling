@@ -162,10 +162,10 @@ ggsave(here::here("Figures", file.name),
 ## Plot posterior predictions for group effect (varying slopes and intercepts)
 # get posterior predictions
 m_type_pred <- m_type %>% 
-  epred_draws(newdata = tibble(type = df$type,
+  predicted_draws(newdata = tibble(type = df$type,
                                total_points = df$total_points,
                                group = df$group)) %>% 
-  mutate(.epred_prop = .epred/total_points) # change to proportion
+  mutate(.epred_prop = .prediction/total_points) # change to proportion
 ```
 
 
@@ -182,12 +182,16 @@ p1_groups <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   scale_y_continuous(lim = c(0.2,1)) +
   guides(color = "none", fill = "none") +
   labs(y = "Performance Score") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title.y = element_text(size = 20),
         axis.title.x = element_blank(),
         plot.title = element_text(size = 20),
-        strip.text = element_text(size = 20)) +
+        strip.text = element_text(size = 20),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
   facet_wrap(~group)
 ```
 
@@ -195,9 +199,9 @@ p1_groups <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
 
 # Save plot
 file.name <- paste0("m_type_pred_groups",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".pdf")
 
-ggsave(here::here("Figures", file.name),
+ggsave(here::here("Figures/pdf", file.name),
        plot = p1_groups,
        width = 3500,
        height = 3000,
@@ -218,6 +222,14 @@ knitr::include_graphics("C:/Users/ojacobson/Documents/PhD/R/CH1_Sampling/Figures
 
 ```{r, eval = FALSE, include = FALSE}
 
+# get predictions
+# get posterior predictions
+m_type_pred <- m_type %>% 
+  epred_draws(newdata = tibble(type = df$type,
+                               total_points = df$total_points),
+                  re_formula = NA) %>% 
+  mutate(.epred_prop = .epred/total_points) # change to proportion
+
 # Plot posterior across groups
 p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   geom_half_point(data = df, aes(color = type, y = prop),
@@ -231,7 +243,7 @@ p1 <- ggplot(data = m_type_pred, aes(x = type, y = .epred_prop)) +
   guides(color = "none", fill = "none") +
   labs(y = "Performance Score",
        title = "A") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title.y = element_text(size = 20),
         axis.title.x = element_blank(),
@@ -309,20 +321,19 @@ ggsave(here::here("Figures", file.name),
 
 ```{r, eval = FALSE, include = FALSE}
 
-# Posterior predictions per group (varying slopes and intercepts)
-# add posterior predictions
+# Posterior predictions poulation (varying slopes and intercepts)
 post_loc_draws <- df %>% 
-  data_grid(locations_std = seq_range(-2:3, n =50),
+  data_grid(locations_std = seq_range(-2:3, n =30),
             total_points = total_points,
-            type = unique(type),
-            group = unique(group)) %>%
-  add_predicted_draws(m_locs, ndraws = 200) %>% 
-  mutate(.pred_prop = .prediction/total_points)
+            type = unique(type)) %>%
+  #add_predicted_draws(m_locs, ndraws = 200) %>%
+  add_epred_draws(m_locs, ndraws = 100, re_formula = NA) %>%
+  mutate(.epred_prop = .epred/total_points)
 
 # get mean prediction
 mean_only <- post_loc_draws %>% 
   group_by(locations_std, type) %>%
-  summarize(.pred_prop = mean(.pred_prop))
+  summarize(.epred_prop = mean(.epred_prop))
 
 # get real number of locations for x axis sequence
 num_locs <- sapply(X = (seq(-2, 3, by = 0.5)),
@@ -337,18 +348,18 @@ num_locs[2] <- "(0)"
 # plot without group effects
 p2 <- ggplot(data = post_loc_draws, 
              aes(x = locations_std, 
-                 y = .pred_prop, 
+                 y = .epred_prop, 
                  color = type, 
                  fill = type)) +
-   geom_line(stat = "smooth", # smooth posterior lines grouped by type
+  geom_line(stat = "smooth", # smooth posterior lines grouped by type
             aes(group = paste(type, .draw)), 
-            alpha = 0.05, 
+            alpha = 0.03, 
             se = FALSE, 
-            lwd = 0.01) + 
+            lwd = 1.5) + 
   geom_line(data = mean_only, # add mean line
             stat = "smooth", 
             aes(group = type), 
-            lwd = 0.7) +
+            lwd = 1) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
@@ -370,7 +381,7 @@ p2 <- ggplot(data = post_loc_draws,
   labs(x = "Number of Recorded Locations",
        y = "Performance Score",
        title = "B") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 16),
         plot.title = element_text(size = 20),
@@ -392,16 +403,29 @@ p2
 
 ```{r, eval = FALSE, include = FALSE}
 
+# Posterior predictions per group (varying slopes and intercepts)
+post_loc_draws_grp <- df %>% 
+  group_by(group) %>% 
+  data_grid(locations_std = seq_range(-2:3, n =30),
+            total_points = total_points,
+            type = unique(type)) %>%
+  #add_predicted_draws(m_locs, ndraws = 200) %>%
+  add_predicted_draws(m_locs, ndraws = 100) %>%
+  mutate(.epred_prop = .prediction/total_points)
+
 # get mean predictions
-mean_only_group <- post_loc_draws %>% 
+mean_only_group <- post_loc_draws_grp %>% 
   group_by(locations_std, type, group) %>%
-  summarize(.pred_prop = mean(.pred_prop))
+  summarize(.epred_prop = mean(.epred_prop))
 
 # plot
-p2_groups <- ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop, color = type, fill = type)) +
-  geom_line(stat = "smooth", aes(group = paste(type, .draw)), alpha = 0.03, se = FALSE, lwd = 0.05) + # smooth posterior lines grouped by type
+p2_groups <- ggplot(data = post_loc_draws_grp, 
+                    aes(x = locations_std, y = .epred_prop, color = type, fill = type)) +
+  geom_line(stat = "smooth", 
+            aes(group = paste(type, group, .draw)), 
+            alpha = 0.05, se = FALSE, lwd = 1.5) + # smooth posterior lines grouped by type
   geom_line(data = mean_only_group, stat = "smooth", # add mean line
-            aes(group = type), lwd = 1.1) +
+            aes(group = paste(type, group)), lwd = 1) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
@@ -413,12 +437,18 @@ p2_groups <- ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop
   labs(x = "Number of Recorded Locations",
        y = "Performance Score") +
   theme_clean() +
-  theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), 
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 23),
+        legend.title = element_blank(), 
         legend.position = "bottom",
         legend.key.size = unit(2,'cm'),
         legend.text = element_text(size=15),
-        strip.text = element_text(size = 20)) +
+        strip.text = element_text(size = 20),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
   facet_wrap(~group)
 ```
 
@@ -426,11 +456,11 @@ p2_groups <- ggplot(data = post_loc_draws, aes(x = locations_std, y = .pred_prop
 
 # Save plot
 file.name <- paste0("m_locs_pred_groups",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".pdf")
 
-ggsave(here::here("Figures", file.name),
+ggsave(here::here("Figures/pdf", file.name),
        plot = p2_groups,
-       width = 3500,
+       width = 3800,
        height = 3000,
        units = "px")
 
@@ -500,15 +530,14 @@ ggsave(here::here("Figures", file.name),
 post_weeks_draws <- df %>% 
   data_grid(weeks_std = seq_range(-2:3, n =50),
             total_points = total_points,
-            type = unique(type),
-            group = unique(group)) %>%
-  add_predicted_draws(m_weeks, ndraws = 200) %>% 
-  mutate(.pred_prop = .prediction/total_points)
+            type = unique(type)) %>%
+  add_epred_draws(m_weeks, ndraws = 100, re_formula = NA) %>% 
+  mutate(.epred_prop = .epred/total_points)
 
 # get mean prediction
 mean_only <- post_weeks_draws %>% 
   group_by(weeks_std, type) %>%
-  summarize(.pred_prop = mean(.pred_prop))
+  summarize(.epred_prop = mean(.epred_prop))
 
 # get real number of weeks for x axis sequence
 num_weeks <- sapply(X = (seq(-2, 3, by = 0.5)),
@@ -522,18 +551,18 @@ num_weeks <- sapply(X = (seq(-2, 3, by = 0.5)),
 # plot without group effects
 p3 <- ggplot(data = post_weeks_draws, 
        aes(x = weeks_std, 
-           y = .pred_prop, 
+           y = .epred_prop, 
            color = type, 
            fill = type)) +
   geom_line(stat = "smooth", # smooth posterior lines grouped by type
             aes(group = paste(type, .draw)), 
-            alpha = 0.05, 
+            alpha = 0.03, 
             se = FALSE, 
-            lwd = 0.01) + 
+            lwd = 1.5) + 
   geom_line(data = mean_only, # add mean line
             stat = "smooth", 
             aes(group = type), 
-            lwd = 0.7) +
+            lwd = 1) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, 
@@ -558,7 +587,7 @@ p3 <- ggplot(data = post_weeks_draws,
   labs(x = "Number of Unique Weeks",
        y = "Performance Score",
        title = "C") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 16),
         plot.title = element_text(size = 20),
@@ -583,9 +612,9 @@ p4 <- p1 + p2/p3 + plot_layout(guides = "collect") & theme(legend.position = 'bo
 
 # Save plot
 file.name.model.preds <- paste0("model_prediction_plots_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".pdf")
 
-ggsave(here::here("Figures", file.name.model.preds),
+ggsave(here::here("Figures/pdf", file.name.model.preds),
        plot = p4,
        width = 3500,
        height = 3000,
@@ -594,16 +623,27 @@ ggsave(here::here("Figures", file.name.model.preds),
 
 ```{r, include = FALSE, eval = FALSE}
 
+# add posterior predictions per group
+post_weeks_draws_grp <- df %>% 
+  group_by(group) %>% 
+  data_grid(weeks_std = seq_range(-2:3, n =50),
+            total_points = total_points,
+            type = unique(type)) %>%
+  add_epred_draws(m_weeks, ndraws = 100) %>% 
+  mutate(.epred_prop = .epred/total_points)
+
 # get mean predictions
-mean_only_group <- post_weeks_draws %>% 
+mean_only_group <- post_weeks_draws_grp %>% 
   group_by(weeks_std, type, group) %>%
-  summarize(.pred_prop = mean(.pred_prop))
+  summarize(.epred_prop = mean(.epred_prop))
 
 # plot group effects
-p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, color = type, fill = type)) +
-  geom_line(stat = "smooth", aes(group = paste(type, .draw)), alpha = 0.03, se = FALSE, lwd = 0.05) + # smooth posterior lines grouped by type
+p3_groups <- ggplot(data = post_weeks_draws_grp, 
+                    aes(x = weeks_std, y = .epred_prop, color = type, fill = type)) +
+  geom_line(stat = "smooth", aes(group = paste(type, group, .draw)), 
+            alpha = 0.03, se = FALSE, lwd = 1.5) + # smooth posterior lines grouped by type
   geom_line(data = mean_only_group, stat = "smooth", # add mean line
-            aes(group = type), lwd = 1.1) +
+            aes(group = paste(type,group)), lwd = 1) +
   geom_point(data = df,
              aes(y = prop), show.legend = FALSE) +
   geom_hline(yintercept = 0.95, linetype = "dashed", color = "black", size = 1, alpha = 0.5) +
@@ -615,12 +655,18 @@ p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, 
   labs(x = "Coarse-Scale Volume (# weeks)",
        y = "Performance Value") +
   theme_clean() +
-  theme_bw(base_family = "ArcherPro Book") +
-  theme(legend.title = element_blank(), 
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 23),
+        legend.title = element_blank(), 
         legend.position = "bottom",
         legend.key.size = unit(2,'cm'),
         legend.text = element_text(size=15),
-        strip.text = element_text(size = 20)) +
+        strip.text = element_text(size = 20),
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
   facet_wrap(~group)
 ```
 
@@ -628,11 +674,11 @@ p3_groups <- ggplot(data = post_weeks_draws, aes(x = weeks_std, y = .pred_prop, 
 
 # Save plot
 file.name <- paste0("m_weeks_pred_groups",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".pdf")
 
-ggsave(here::here("Figures", file.name),
+ggsave(here::here("Figures/pdf", file.name),
        plot = p3_groups,
-       width = 3500,
+       width = 3800,
        height = 3000,
        units = "px")
 
@@ -701,7 +747,7 @@ p1 <- ggplot(ame_locs_clumped, aes(x = .value,
        #caption = "80% and 95% credible intervals shown in black",
        title = "A",
        subtitle = "Concentrated Sampling") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(legend.position=c(.75,.85),
         legend.title = element_text(size=14), #change legend title font size
         legend.text = element_text(size=11),
@@ -762,7 +808,7 @@ p2 <- ggplot(ame_locs_spread, aes(x = .value,
        #caption = "80% and 95% credible intervals shown in black",
        title = "B",
        subtitle = "Spread Sampling") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(legend.position=c(.75,.85),
         legend.title = element_text(size=14), #change legend title font size
         legend.text = element_text(size=11),
@@ -825,7 +871,7 @@ p3 <- ggplot(ame_weeks_clumped, aes(x = .value,
   labs(x = "Instantaneous Slope Coefficients", 
        y = "Density", fill = "Number of Weeks",
        title = "C") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(legend.position=c(.75,.85),
         legend.title = element_text(size=14), #change legend title font size
         legend.text = element_text(size=11),
@@ -884,7 +930,7 @@ p4 <- ggplot(ame_weeks_spread, aes(x = .value,
        y = "Density", fill = "Number of Weeks",
        caption = "point intervals show 80% and 95% credible intervals",
        title = "D") +
-  theme_bw(base_family = "ArcherPro Book") +
+  theme_bw() +
   theme(legend.position=c(.75,.85), # .7,.65
         legend.title = element_text(size=14), #change legend title font size
         legend.text = element_text(size=11),
@@ -957,9 +1003,9 @@ p5
 ```{r, include=FALSE, eval = FALSE}
 # Save plot
 file.name.model.slopes <- paste0("model_slope_plots_",
-                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".jpg")
+                                format(Sys.time(), "%Y_%m_%d_%H%M%S"), ".pdf")
 
-ggsave(here::here("Figures", file.name.model.slopes),
+ggsave(here::here("Figures/pdf", file.name.model.slopes),
        plot = p5,
        width = 3300,
        height = 3000,
